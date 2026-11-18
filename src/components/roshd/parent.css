@@ -1,0 +1,427 @@
+/*
+ * استایل پنل اولیا — تمام کلاس‌ها با پیشوند parent- (بدون تداخل با globals)
+ * موبایل‌فرست + RTL؛ اهداف لمسی ≥ 44px
+ */
+
+.parent-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 1.5rem;
+}
+
+/* ---------- عنوان ---------- */
+
+.parent-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.parent-subtitle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* ---------- تب‌ها ---------- */
+
+.parent-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.parent-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-btn, 12px);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.parent-tab:hover {
+  background: var(--card2, var(--bg-soft));
+}
+
+.parent-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast, #fff);
+  font-weight: 600;
+}
+
+.parent-count {
+  display: inline-block;
+  min-width: 1.375rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--accent-soft, var(--bg-soft));
+  color: inherit;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.parent-tab.active .parent-count {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.parent-refresh {
+  margin-inline-start: auto;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-btn, 12px);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.15s ease;
+}
+
+.parent-refresh:hover:not(:disabled) {
+  background: var(--card2, var(--bg-soft));
+  transform: rotate(20deg);
+}
+
+.parent-refresh:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ---------- کارت‌ها ---------- */
+
+.parent-card {
+  display: block;
+  padding: 1rem;
+  margin-bottom: 0.875rem;
+}
+
+.parent-students,
+.parent-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* ---------- هدر کارت دانش‌آموز ---------- */
+
+.parent-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.parent-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: 1.4rem;
+}
+
+.parent-who {
+  min-width: 0;
+  flex: 1;
+}
+
+.parent-name {
+  font-weight: 700;
+  font-size: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.parent-username {
+  font-size: 0.78rem;
+  color: var(--muted);
+  direction: ltr;
+  text-align: right;
+}
+
+.parent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* ---------- آمار ---------- */
+
+.parent-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.parent-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.55rem 0.25rem;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  text-align: center;
+  min-width: 0;
+}
+
+.parent-stat-num {
+  font-weight: 700;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.parent-stat-label {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+/* ---------- نشان‌ها ---------- */
+
+.parent-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-bottom: 0.625rem;
+}
+
+.parent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-soft, var(--bg-soft));
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+
+.parent-badge.muted {
+  color: var(--muted);
+  background: transparent;
+  border-style: dashed;
+}
+
+.parent-updated {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ---------- ارسال‌ها ---------- */
+
+.parent-assignment {
+  display: block;
+  margin-bottom: 0.625rem;
+  font-size: 0.95rem;
+}
+
+.parent-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.parent-sub-row:first-of-type {
+  border-top: 0;
+}
+
+.parent-sub-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.parent-sub-name {
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.parent-sub-file {
+  font-size: 0.8rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  text-align: right;
+}
+
+.parent-sub-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.parent-sub-date {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.parent-sub-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 0 0 auto;
+}
+
+/* ---------- دکمه‌ها ---------- */
+
+.parent-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-height: 44px;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-btn, 12px);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.parent-btn:hover {
+  filter: brightness(1.08);
+}
+
+.parent-btn.secondary {
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ---------- حالت‌ها ---------- */
+
+.parent-empty {
+  padding: 1.25rem;
+  text-align: center;
+  color: var(--muted);
+}
+
+.parent-error {
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.875rem;
+  border-color: var(--danger, #ff7777);
+  color: var(--danger, #ff7777);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.parent-error .parent-btn {
+  min-height: 36px;
+  background: transparent;
+  border-color: currentColor;
+  color: inherit;
+}
+
+/* ---------- اسکلت بارگذاری ---------- */
+
+.parent-skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.parent-skel {
+  height: 120px;
+  border-radius: var(--radius-lg, 16px);
+  background: linear-gradient(
+    90deg,
+    var(--bg-soft) 25%,
+    var(--card2, var(--border)) 50%,
+    var(--bg-soft) 75%
+  );
+  background-size: 200% 100%;
+  animation: parent-shimmer 1.4s infinite;
+}
+
+@keyframes parent-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- موبایل ---------- */
+
+@media (max-width: 640px) {
+  .parent-tabs {
+    gap: 0.375rem;
+  }
+
+  .parent-tab {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .parent-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .parent-sub-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .parent-sub-actions {
+    flex-direction: row;
+  }
+
+  .parent-sub-actions .parent-btn {
+    flex: 1;
+  }
+
+  .parent-username,
+  .parent-sub-file {
+    word-break: break-all;
+  }
+}
+
+/* کاهش حرکت */
+html[data-motion="reduced"] .parent-skel {
+  animation: none;
+}
+
+html[data-motion="reduced"] .parent-refresh:hover:not(:disabled) {
+  transform: none;
+}

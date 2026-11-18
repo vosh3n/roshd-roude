@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String    @id @default(cuid())
+  username   String    @unique
+  name       String
+  email      String? // برای بازیابی رمز عبور
+  salt       String
+  hash       String
+  role       String    @default("student") // "student" | "admin" | "parent"
+  avatar     String    @default("") // نام فایل عکس پروفایل در db/uploads/avatars
+  avatarType String    @default("") // mime عکس پروفایل
+  createdAt  DateTime  @default(now())
+  sessions   Session[]
+  progress   Progress?
+}
+
+model PasswordReset {
+  username  String   @id
+  codeHash  String // sha256(code)
+  expiresAt DateTime
+}
+
+model Progress {
+  username      String   @id
+  user          User     @relation(fields: [username], references: [username], onDelete: Cascade)
+  field         String   @default("")
+  level         String   @default("")
+  completedJson String   @default("{}")
+  badgesJson    String   @default("[]")
+  updatedAt     DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model AdminAllow {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Video {
+  id        String   @id
+  title     String
+  fileId    String
+  filename  String
+  type      String   @default("video/mp4")
+  createdAt DateTime @default(now())
+}
+
+model Assignment {
+  id          String       @id
+  title       String
+  body        String
+  deadline    DateTime
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Submission {
+  id           String     @id
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         String
+  fileId       String
+  fileName     String
+  extraId      String     @default("")
+  extraName    String     @default("")
+  note         String     @default("")
+  at           DateTime   @default(now())
+}

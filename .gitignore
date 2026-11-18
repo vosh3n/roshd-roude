@@ -1,0 +1,32 @@
+# وابستگی‌ها و خروجی بیلد
+node_modules/
+.next/
+out/
+build/
+
+# متغیرهای محیطی — هرگز کامیت نشود
+.env
+.env.local
+.env.*.local
+
+# لاگ‌ها و فایل‌های موقت
+dev.log
+server.log
+*.log
+*.tsbuildinfo
+.npm/
+.cache/
+
+# دادهٔ اجرایی (روی دیسک می‌ماند، ولی در گیت نگه داشته نمی‌شود)
+db/*.db
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+db/backup-*.db
+db/uploads/
+
+# سیستم‌عامل و ادیتور
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
