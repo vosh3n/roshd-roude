@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRoshd, api } from "@/store/roshd";
 import UserAvatar from "./user-avatar";
+import Mascot from "./mascot";
 
 export default function LandingScreen() {
   const setScreen = useRoshd((s) => s.setScreen);
@@ -117,6 +118,10 @@ export default function LandingScreen() {
         <button className="start-btn" id="startBtn" type="button" onClick={goStart}>
           شروع
         </button>
+        <Mascot
+          text="سلام! من رشد هستم. هر روز چهار قدم کوچک برمی‌داریم و معلم کارت را می‌بیند — آماده‌ای؟"
+          size={68}
+        />
       </div>
     </section>
   );

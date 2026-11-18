@@ -44,7 +44,21 @@ interface StudentOverview {
   badges: string[];
   updatedAt: string | null;
   submissions: SubRow[];
+  /** وضعیت ماموریت‌های روزانه — فقط مشاهده */
+  missionStats?: { pending: number; approved: number; revision: number };
+  missionRecent?: {
+    title: string;
+    status: "pending" | "approved" | "revision";
+    teacherNote: string;
+    at: string;
+  }[];
 }
+
+const MISSION_STATUS_FA: Record<string, string> = {
+  pending: "در انتظار بررسی",
+  approved: "تایید شده",
+  revision: "نیاز به اصلاح",
+};
 
 /** استریک امن — اگر دادهٔ ناقص بود صفر برگردانَد (بدون crash) */
 function safeStreak(s: StudentOverview): number {
@@ -258,6 +272,44 @@ export default function ParentScreen() {
                     <span className="parent-badge muted">هنوز نشانی ثبت نشده</span>
                   )}
                 </div>
+
+                {(s.missionStats || s.missionRecent) && (
+                  <div className="parent-missions">
+                    <b className="parent-missions-head">ماموریت‌های روزانه</b>
+                    <div className="parent-mission-counts">
+                      <span className="parent-mstat approved">
+                        تایید شده {toFa(s.missionStats?.approved || 0)}
+                      </span>
+                      <span className="parent-mstat pending">
+                        در انتظار {toFa(s.missionStats?.pending || 0)}
+                      </span>
+                      <span className="parent-mstat revision">
+                        نیاز به اصلاح {toFa(s.missionStats?.revision || 0)}
+                      </span>
+                    </div>
+                    {s.missionRecent?.length ? (
+                      <ul className="parent-mission-list">
+                        {s.missionRecent.map((m, i) => (
+                          <li key={m.title + i}>
+                            <span className="parent-mission-title">{m.title}</span>
+                            <span className={"parent-mstat " + m.status}>
+                              {MISSION_STATUS_FA[m.status] || m.status}
+                            </span>
+                            {m.teacherNote ? (
+                              <span className="parent-mission-note">
+                                پیام معلم: {m.teacherNote}
+                              </span>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="parent-mission-empty">
+                        هنوز ماموریتی ارسال نشده است.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="parent-updated">
                   آخرین به‌روزرسانی:{" "}

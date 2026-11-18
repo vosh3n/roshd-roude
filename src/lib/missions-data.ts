@@ -163,6 +163,46 @@ export const BADGE_INFO: Record<
 
 export const CERT_THRESHOLD = 25;
 
+/* ---------- نوع ماموریت: عملی یا مطالعه‌ای ---------- */
+
+export type MissionKind = "practical" | "reading";
+
+export const MISSION_KIND_TEXT: Record<MissionKind, string> = {
+  practical: "عملی",
+  reading: "مطالعه‌ای",
+};
+
+export const MISSION_KIND_HINT: Record<MissionKind, string> = {
+  practical:
+    "این ماموریت عملی است: چیزی بساز یا انجام بده و نتیجه را همین‌جا بفرست — عکس، فایل، لینک یا توضیح کوتاه.",
+  reading:
+    "این ماموریت مطالعه‌ای است: اول بخوان یا تماشا کن، بعد با کلمات خودت خلاصه‌اش را بنویس.",
+};
+
+/** نشانه‌های «ساختن» در متن ماموریت */
+const PRACTICAL_RE = /بساز|طراحی کن|درست کن|ایجاد کن|بکش|اصلاح کن|بازطراحی کن|تهیه کن|پیاده|بنویس/;
+/** نشانه‌های «خواندن و فهمیدن» */
+const READING_RE = /بخوان|مطالعه|تماشا|ببین|یاد بگیر|پیدا کن|تحقیق|توضیح بده|مقایسه کن|تحلیل کن|بررسی کن|یادداشت کن/;
+
+/** نوع هر ماموریت از روی متنش تشخیص داده می‌شود */
+export function missionKind(field: string, idx: number): MissionKind {
+  const text = FIELDS[field]?.missions[idx] || "";
+  if (PRACTICAL_RE.test(text)) return "practical";
+  if (READING_RE.test(text)) return "reading";
+  return "practical";
+}
+
+/** هویت رنگی هر رشته — برای کارت‌ها، مسیر و ماسکات */
+export const FIELD_THEME: Record<
+  string,
+  { label: string; color: string; second: string }
+> = {
+  computer: { label: "کامپیوتر", color: "#5b8def", second: "#7bdff2" },
+  animation: { label: "انیمیشن", color: "#b07cff", second: "#ff9ec7" },
+  graphic: { label: "گرافیک", color: "#f2994a", second: "#ffd166" },
+  tv: { label: "تلویزیون", color: "#2ec4a6", second: "#9be7c4" },
+};
+
 /** دانه تصادفی برای انتخاب ماموریت روزانه */
 export function seeded(str: string) {
   let h = 2166136261;

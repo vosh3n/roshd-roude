@@ -1,0 +1,1023 @@
+/* =========================================================================
+   calm.css — لایهٔ استایل آرامِ «مسیر رشد»
+   -------------------------------------------------------------------------
+   روی globals.css سوار می‌شود (بعد از آن import شده است) و فقط چیزهای تازه‌ی
+   این نسخه را می‌آورد: ماسکات، مسیر تصویری ماموریت، کارت‌های ماموریت و
+   بررسی معلم، حالت‌های خالی دلپذیر، گردیِ دوستانه‌تر و حرکت‌های نرم.
+   ۱۷ پوستهٔ موجود دست‌نخورده می‌مانند؛ فقط گردی گوشه‌ها از یک متغیر واحد
+   می‌آید و برای پوسته‌های قدیمی/پیکسلی مربعی می‌ماند.
+   ========================================================================= */
+
+html {
+  /* هویت رنگی رشته — در FieldTheme از روی رشتهٔ کاربر ست می‌شود */
+  --field-1: var(--accent);
+  --field-2: var(--accent2, var(--accent));
+  --calm-round: 0.95rem;
+  --calm-round-lg: 1.35rem;
+  --calm-warn: #e0a13a;
+  --calm-good: #21a98c;
+}
+
+/* پوسته‌های قدیمی/پیکسلی باید مربعی بمانند */
+html[data-theme="win98"],
+html[data-theme="pixel"],
+html[data-theme="terminal"] {
+  --calm-round: 0.25rem;
+  --calm-round-lg: 0.35rem;
+}
+
+/* رنگ اختصاصی هر رشته (وقتی FieldTheme ست نکرده باشد) */
+html[data-field="computer"] { --field-1: #5b8def; --field-2: #7bdff2; }
+html[data-field="animation"] { --field-1: #b07cff; --field-2: #ff9ec7; }
+html[data-field="graphic"] { --field-1: #f2994a; --field-2: #ffd166; }
+html[data-field="tv"] { --field-1: #2ec4a6; --field-2: #9be7c4; }
+
+/* ---------- گردی دوستانه‌تر با حفظ سلسله‌مراتب ---------- */
+
+.card,
+.modal {
+  border-radius: var(--calm-round-lg);
+}
+
+.stat {
+  border-radius: var(--calm-round);
+}
+
+.btn {
+  border-radius: var(--calm-round);
+}
+
+/* ---------- ماسکات «رشد» ---------- */
+
+.mascot {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--calm-round-lg);
+  border: 1px solid color-mix(in srgb, var(--field-1) 30%, var(--line));
+  background:
+    radial-gradient(120% 140% at 0% 0%,
+      color-mix(in srgb, var(--field-1) 14%, transparent),
+      transparent 60%),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--field-1) 8%, var(--card)),
+      color-mix(in srgb, var(--field-2) 8%, var(--card)));
+  animation: calm-rise 0.5s ease both;
+}
+
+.mascot-figure {
+  flex: 0 0 auto;
+  line-height: 0;
+  filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--field-1) 30%, transparent));
+}
+
+.mascot-figure svg {
+  animation: mascot-bob 4.5s ease-in-out infinite;
+}
+
+.mascot-bubble {
+  min-width: 0;
+}
+
+.mascot-name {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--field-1) 70%, var(--text));
+  margin-bottom: 0.15rem;
+}
+
+.mascot-bubble p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.85;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.mascot-cheer .mascot-figure svg {
+  animation: mascot-hop 1.6s ease-in-out infinite;
+}
+
+/* ---------- مسیر تصویری ماموریت‌ها ---------- */
+
+.progress-path {
+  position: relative;
+  padding: 1rem 1rem 0.8rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--calm-round-lg);
+  background: var(--card);
+  animation: calm-rise 0.45s ease both;
+}
+
+.path-rail {
+  position: absolute;
+  inset-inline: 2rem;
+  top: 2.35rem;
+  height: 2px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    to left,
+    color-mix(in srgb, var(--field-1) 35%, transparent) 0 8px,
+    transparent 8px 15px
+  );
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.path-steps {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 0.35rem;
+  justify-content: space-between;
+}
+
+.path-step {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--calm-round);
+}
+
+.path-step:focus-visible {
+  outline: 2px solid var(--field-1);
+  outline-offset: 2px;
+}
+
+.path-node {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 2px dashed color-mix(in srgb, var(--muted) 45%, transparent);
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+}
+
+.path-step.approved .path-node {
+  color: #fff;
+  background: var(--field-1);
+  border: 2px solid var(--field-1);
+  box-shadow: 0 8px 20px -10px var(--field-1);
+}
+
+.path-step.pending .path-node {
+  color: var(--field-1);
+  background: color-mix(in srgb, var(--field-1) 14%, var(--bg));
+  border: 2px solid color-mix(in srgb, var(--field-1) 65%, var(--line));
+}
+
+.path-step.revision .path-node {
+  color: #8a5b09;
+  background: color-mix(in srgb, var(--calm-warn) 18%, var(--bg));
+  border: 2px solid color-mix(in srgb, var(--calm-warn) 70%, var(--line));
+}
+
+.path-step:hover .path-node,
+.path-step:focus-visible .path-node {
+  transform: translateY(-3px) scale(1.04);
+}
+
+.path-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.08rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.path-label b {
+  font-size: 0.7rem;
+  color: var(--text);
+}
+
+.path-label small {
+  font-size: 0.64rem;
+  color: var(--muted);
+  max-width: 5.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path-caption {
+  margin-top: 0.7rem;
+  text-align: center;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+/* ---------- کارت هر ماموریت ---------- */
+
+.mission-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.mission-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  text-align: start;
+  padding: 0.85rem 1rem;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  background: var(--bg-soft, var(--bg));
+  border: 1px solid var(--line);
+  border-inline-start: 4px solid color-mix(in srgb, var(--field-1) 55%, var(--line));
+  border-radius: var(--calm-round);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease;
+}
+
+.mission-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--field-1) 45%, var(--line));
+  box-shadow: 0 14px 30px -22px rgba(0, 0, 0, 0.85);
+}
+
+.mission-card:focus-visible {
+  outline: 2px solid var(--field-1);
+  outline-offset: 2px;
+}
+
+.mission-card.status-approved {
+  border-inline-start-color: var(--calm-good);
+  background: color-mix(in srgb, var(--calm-good) 6%, var(--bg-soft, var(--bg)));
+}
+
+.mission-card.status-pending {
+  border-inline-start-color: var(--field-1);
+}
+
+.mission-card.status-revision {
+  border-inline-start-color: var(--calm-warn);
+  background: color-mix(in srgb, var(--calm-warn) 7%, var(--bg-soft, var(--bg)));
+}
+
+.mission-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mission-kind {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--field-1) 72%, var(--text));
+  background: color-mix(in srgb, var(--field-1) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--field-1) 32%, transparent);
+}
+
+.mission-kind.reading {
+  color: color-mix(in srgb, var(--field-2) 60%, var(--text));
+  background: color-mix(in srgb, var(--field-2) 20%, transparent);
+  border-color: color-mix(in srgb, var(--field-2) 40%, transparent);
+}
+
+.mission-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.14rem 0.55rem;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.mission-chip.approved {
+  color: var(--calm-good);
+  background: color-mix(in srgb, var(--calm-good) 16%, transparent);
+  border-color: color-mix(in srgb, var(--calm-good) 42%, transparent);
+}
+
+.mission-chip.pending {
+  color: color-mix(in srgb, var(--field-1) 72%, var(--text));
+  background: color-mix(in srgb, var(--field-1) 14%, transparent);
+  border-color: color-mix(in srgb, var(--field-1) 36%, transparent);
+}
+
+.mission-chip.revision {
+  color: #8a5b09;
+  background: color-mix(in srgb, var(--calm-warn) 18%, transparent);
+  border-color: color-mix(in srgb, var(--calm-warn) 45%, transparent);
+}
+
+html[data-mode="dark"] .mission-chip.revision {
+  color: #ffcf80;
+}
+
+.mission-card .mission-title {
+  font-weight: 600;
+  font-size: 0.92rem;
+  line-height: 1.85;
+}
+
+.mission-card .mission-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.mission-card-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--calm-warn) 55%, var(--text));
+  padding: 0.45rem 0.6rem;
+  border-radius: calc(var(--calm-round) * 0.8);
+  background: color-mix(in srgb, var(--calm-warn) 12%, transparent);
+}
+
+.mission-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--field-1) 80%, var(--text));
+}
+
+/* ---------- پنجرهٔ کار روی ماموریت ---------- */
+
+.mission-modal-bg {
+  z-index: 120;
+  padding: 1rem;
+}
+
+.modal.mission-modal {
+  width: min(94vw, 33rem);
+  max-width: 33rem;
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: start;
+  position: relative;
+  padding: 1.4rem 1.4rem 1.6rem;
+  border-radius: var(--calm-round-lg);
+  animation: calm-pop 0.28s ease both;
+}
+
+.mission-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.4rem;
+  padding-inline-end: 2rem;
+}
+
+.mission-modal-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+
+.mission-modal-hint {
+  margin: 0 0 0.95rem;
+  font-size: 0.82rem;
+  line-height: 1.95;
+  color: var(--muted);
+}
+
+.teacher-note {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--calm-round);
+  border: 1px solid color-mix(in srgb, var(--calm-warn) 45%, var(--line));
+  background: color-mix(in srgb, var(--calm-warn) 13%, var(--card));
+}
+
+.teacher-note b {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--calm-warn) 60%, var(--text));
+}
+
+.teacher-note p {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.9;
+}
+
+.mission-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.9rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--calm-round);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  border: 1px solid var(--line);
+  background: var(--bg-soft, var(--bg));
+}
+
+.mission-banner.approved {
+  color: var(--calm-good);
+  border-color: color-mix(in srgb, var(--calm-good) 40%, var(--line));
+  background: color-mix(in srgb, var(--calm-good) 12%, var(--card));
+}
+
+.mission-banner.pending {
+  color: color-mix(in srgb, var(--field-1) 75%, var(--text));
+  border-color: color-mix(in srgb, var(--field-1) 35%, var(--line));
+  background: color-mix(in srgb, var(--field-1) 10%, var(--card));
+}
+
+.mission-sent {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--calm-round);
+  border: 1px dashed var(--line);
+}
+
+.mission-sent > b {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.mission-sent-text {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.mission-link,
+.mission-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--field-1) 80%, var(--text));
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.mission-link:hover,
+.mission-file:hover {
+  text-decoration: underline;
+}
+
+.mission-thumb {
+  max-width: 100%;
+  max-height: 15rem;
+  object-fit: contain;
+  margin-top: 0.35rem;
+  border-radius: var(--calm-round);
+  border: 1px solid var(--line);
+}
+
+.mission-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.mission-field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.mission-field > span {
+  font-weight: 600;
+}
+
+.mission-field input[type="text"],
+.mission-field input[type="url"],
+.mission-field input:not([type]),
+.mission-field textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--calm-round) * 0.8);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mission-field input:focus-visible,
+.mission-field textarea:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--field-1) 65%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-1) 22%, transparent);
+}
+
+.mission-field textarea {
+  resize: vertical;
+  min-height: 4.6rem;
+  line-height: 1.9;
+}
+
+.mission-field input[type="file"] {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px dashed color-mix(in srgb, var(--field-1) 40%, var(--line));
+  border-radius: calc(var(--calm-round) * 0.8);
+}
+
+.mission-field small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.mission-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+/* ---------- پنل معلم: فیلترها و کارت بررسی ---------- */
+
+.mission-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.2rem 0 1rem;
+}
+
+.teacher-tabs .mission-filter {
+  font-size: 0.82rem;
+}
+
+.mission-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.mission-filter:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+}
+
+.mission-filter.active {
+  color: #fff;
+  background: var(--field-1);
+  border-color: var(--field-1);
+}
+
+.mission-filter-count {
+  font-size: 0.68rem;
+  padding: 0.02rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.review-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.review-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border-inline-start: 4px solid color-mix(in srgb, var(--field-1) 60%, var(--line));
+  animation: calm-rise 0.35s ease both;
+}
+
+.review-card.status-approved {
+  border-inline-start-color: var(--calm-good);
+}
+
+.review-card.status-revision {
+  border-inline-start-color: var(--calm-warn);
+}
+
+.review-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.review-user {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.review-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.review-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.85;
+}
+
+.review-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.95;
+  white-space: pre-wrap;
+  padding: 0.55rem 0.7rem;
+  border-radius: calc(var(--calm-round) * 0.8);
+  background: var(--bg-soft, var(--bg));
+}
+
+.review-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.review-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.review-note {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.review-note textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.9;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: calc(var(--calm-round) * 0.8);
+  resize: vertical;
+}
+
+.review-note textarea:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--field-1) 60%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--field-1) 20%, transparent);
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn.review-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #062a22;
+  background: var(--calm-good);
+  border-color: transparent;
+}
+
+.btn.review-approve:hover {
+  background: color-mix(in srgb, var(--calm-good) 88%, #ffffff);
+}
+
+.btn.review-revision {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: color-mix(in srgb, var(--calm-warn) 65%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--calm-warn) 45%, var(--line));
+}
+
+/* ---------- حالت‌های خالی دلپذیر ---------- */
+
+.calm-empty {
+  display: grid;
+  place-items: center;
+  gap: 0.4rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border: 1px dashed color-mix(in srgb, var(--field-1) 35%, var(--line));
+  border-radius: var(--calm-round-lg);
+  background: color-mix(in srgb, var(--field-1) 6%, var(--card));
+  animation: calm-rise 0.4s ease both;
+}
+
+.calm-empty-art {
+  color: color-mix(in srgb, var(--field-1) 70%, var(--muted));
+  opacity: 0.95;
+}
+
+.calm-empty b {
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.calm-empty p {
+  margin: 0;
+  max-width: 26rem;
+  font-size: 0.8rem;
+  line-height: 1.95;
+  color: var(--muted);
+}
+
+/* ---------- پنل اولیا: وضعیت ماموریت‌ها (فقط مشاهده) ---------- */
+
+.parent-missions {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed var(--line);
+}
+
+.parent-missions-head {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.parent-mission-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.parent-mstat {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.parent-mstat.approved {
+  color: var(--calm-good);
+  border-color: color-mix(in srgb, var(--calm-good) 40%, transparent);
+  background: color-mix(in srgb, var(--calm-good) 12%, transparent);
+}
+
+.parent-mstat.pending {
+  color: color-mix(in srgb, var(--field-1) 72%, var(--text));
+  border-color: color-mix(in srgb, var(--field-1) 35%, transparent);
+  background: color-mix(in srgb, var(--field-1) 12%, transparent);
+}
+
+.parent-mstat.revision {
+  color: color-mix(in srgb, var(--calm-warn) 62%, var(--text));
+  border-color: color-mix(in srgb, var(--calm-warn) 40%, transparent);
+  background: color-mix(in srgb, var(--calm-warn) 14%, transparent);
+}
+
+.parent-mission-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.parent-mission-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: calc(var(--calm-round) * 0.7);
+  background: var(--bg-soft, var(--bg));
+}
+
+.parent-mission-title {
+  color: var(--text);
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.parent-mission-note {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--calm-warn) 55%, var(--text));
+}
+
+.parent-mission-empty {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+/* ---------- حرکت‌های نرم ---------- */
+
+@keyframes calm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes calm-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes mascot-hop {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  40% {
+    transform: translateY(-5px) rotate(-3deg);
+  }
+  70% {
+    transform: translateY(-1px) rotate(2deg);
+  }
+}
+
+@keyframes calm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: calm-spin 0.9s linear infinite;
+}
+
+/* احترام به «کاهش حرکت» — هم تنظیمات سایت، هم تنظیم سیستم */
+html[data-motion="reduced"] .mascot,
+html[data-motion="reduced"] .mascot-figure svg,
+html[data-motion="reduced"] .progress-path,
+html[data-motion="reduced"] .mission-card,
+html[data-motion="reduced"] .review-card,
+html[data-motion="reduced"] .calm-empty,
+html[data-motion="reduced"] .modal.mission-modal {
+  animation: none !important;
+  transition: none !important;
+}
+
+html[data-motion="reduced"] .mission-card:hover,
+html[data-motion="reduced"] .path-step:hover .path-node {
+  transform: none !important;
+}
+
+html[data-motion="reduced"] .spin {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot,
+  .mascot-figure svg,
+  .progress-path,
+  .mission-card,
+  .review-card,
+  .calm-empty,
+  .modal.mission-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- موبایل ---------- */
+
+@media (max-width: 560px) {
+  .mascot {
+    gap: 0.6rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .mascot-figure {
+    transform: scale(0.85);
+  }
+
+  .mascot-bubble p {
+    font-size: 0.84rem;
+  }
+
+  .progress-path {
+    padding: 0.85rem 0.6rem 0.7rem;
+  }
+
+  .path-rail {
+    inset-inline: 1.6rem;
+  }
+
+  .path-node {
+    width: 2.3rem;
+    height: 2.3rem;
+    font-size: 0.8rem;
+  }
+
+  .path-label small {
+    display: none;
+  }
+
+  .modal.mission-modal {
+    width: 100%;
+    max-height: 90vh;
+    padding: 1.1rem 1rem 1.3rem;
+  }
+
+  .review-card {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .review-actions .btn {
+    flex: 1 1 8rem;
+    justify-content: center;
+  }
+}
+
+/* احترام به حالت فشرده/بزرگ‌تر فونت بدون شکستن چیدمان */
+html[data-fontscale="xl"] .path-label small {
+  display: none;
+}

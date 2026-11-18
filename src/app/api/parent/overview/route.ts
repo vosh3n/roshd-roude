@@ -38,6 +38,17 @@ export async function GET() {
     subsByUser.set(s.user, list);
   }
 
+  /* وضعیت ماموریت‌ها — فقط برای مشاهده در پنل اولیا */
+  const missions = await db.missionSubmission.findMany({
+    orderBy: { updatedAt: "desc" },
+  });
+  const missionsByUser = new Map<string, typeof missions>();
+  for (const m of missions) {
+    const list = missionsByUser.get(m.username) || [];
+    list.push(m);
+    missionsByUser.set(m.username, list);
+  }
+
   const out = students.map((st) => {
     const p = st.progress;
     const subs = (subsByUser.get(st.username) || []).map((s) => ({
@@ -48,6 +59,20 @@ export async function GET() {
       note: s.note || "",
       at: s.at.toISOString(),
     }));
+    const myMissions = missionsByUser.get(st.username) || [];
+    const missionStats = { pending: 0, approved: 0, revision: 0 };
+    for (const m of myMissions) {
+      if (m.status === "pending") missionStats.pending++;
+      else if (m.status === "approved") missionStats.approved++;
+      else if (m.status === "revision") missionStats.revision++;
+    }
+    const missionRecent = myMissions.slice(0, 5).map((m) => ({
+      title: m.title,
+      status: m.status,
+      teacherNote: m.teacherNote,
+      at: m.updatedAt.toISOString(),
+    }));
+
     return {
       username: st.username,
       name: st.name,
@@ -59,6 +84,8 @@ export async function GET() {
       badges: p ? safeParse<string[]>(p.badgesJson, []) : [],
       updatedAt: p ? p.updatedAt.toISOString() : null,
       submissions: subs,
+      missionStats,
+      missionRecent,
     };
   });
 

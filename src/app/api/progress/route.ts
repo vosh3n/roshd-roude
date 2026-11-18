@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { currentUser, jsonError } from "@/lib/auth";
+import { syncProgressFromMissions } from "@/lib/missions-server";
+
+/** نشان‌های شناخته‌شده — از پذیرفتن مقدار دلخواه جلوگیری می‌کند */
+const KNOWN_BADGES = new Set(["start", "streak3", "streak7", "c25", "c50"]);
 
 /** سقف حجم JSON پیشرفت (۵۰۰ کیلوبایت) */
 const MAX_COMPLETED_JSON = 500 * 1024;
@@ -64,9 +68,6 @@ export async function POST(req: NextRequest) {
   if (
     typeof body.field !== "string" ||
     typeof body.level !== "string" ||
-    body.completed === null ||
-    typeof body.completed !== "object" ||
-    Array.isArray(body.completed) ||
     !Array.isArray(body.badges) ||
     body.badges.some((b: unknown) => typeof b !== "string")
   )
@@ -74,8 +75,17 @@ export async function POST(req: NextRequest) {
 
   const field = body.field.slice(0, MAX_KEY_LEN);
   const level = body.level.slice(0, MAX_KEY_LEN);
-  const completed = body.completed as Record<string, boolean>;
-  const badges = body.badges as string[];
+
+  /* «انجام‌شده» فقط از ماموریت‌های تاییدشدهٔ معلم ساخته می‌شود؛
+     نقشه‌ای که مرورگر می‌فرستد پذیرفته نمی‌شود تا آمار قابل دستکاری نباشد. */
+  const completed = await syncProgressFromMissions(user.username);
+  const badges = Array.from(
+    new Set(
+      (body.badges as string[])
+        .filter((b) => KNOWN_BADGES.has(b))
+        .slice(0, KNOWN_BADGES.size)
+    )
+  );
 
   let completedJson: string;
   let badgesJson: string;
@@ -90,9 +100,14 @@ export async function POST(req: NextRequest) {
 
   await db.progress.upsert({
     where: { username: user.username },
-    update: { field, level, completedJson, badgesJson },
+    update: {
+      completedJson,
+      badgesJson,
+      ...(field ? { field } : {}),
+      ...(level ? { level } : {}),
+    },
     create: { username: user.username, field, level, completedJson, badgesJson },
   });
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, completed });
 }

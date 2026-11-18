@@ -20,6 +20,37 @@ import { dayKey } from "@/lib/jalali";
 
 /* ---------- انواع داده ---------- */
 
+/** وضعیت ارسال یک ماموریت (از سرور می‌آید) */
+export type MissionStatus = "pending" | "approved" | "revision";
+export type MissionKind = "practical" | "reading";
+
+export interface MissionSubmission {
+  id: string;
+  missionKey: string;
+  field: string;
+  level: string;
+  day: string;
+  idx: number;
+  kind: MissionKind;
+  title: string;
+  text: string;
+  link: string;
+  fileName: string;
+  fileType: string;
+  hasFile: boolean;
+  status: MissionStatus;
+  teacherNote: string;
+  reviewedAt: string | null;
+  updatedAt: string;
+}
+
+export const MISSION_STATUS_TEXT: Record<MissionStatus | "none", string> = {
+  none: "ارسال نشده",
+  pending: "در انتظار بررسی",
+  approved: "تایید شده",
+  revision: "نیاز به اصلاح",
+};
+
 export interface UserProgress {
   name: string;
   avatar: string;
@@ -171,10 +202,30 @@ interface RoshdState {
   removeAvatar: () => Promise<void>;
   /** هم‌گام‌سازی آدرس عکس با استور (بعد از آپلود/حذف) */
   applyAvatar: (url: string) => Promise<void>;
-  /** خواندن پیشرفت ذخیره‌شده روی سرور و ادغام با دادهٔ محلی */
+  /** خواندن پیشرفت ذخیره‌شده روی سرور (فقط ماموریت‌های تاییدشده) */
   loadServerProgress: () => Promise<void>;
   missionsForToday: () => number[];
-  toggleMission: (idx: number) => void;
+
+  /** ارسال‌های ماموریت‌ها (کلید = missionKey) */
+  missions: Record<string, MissionSubmission>;
+  missionsLoaded: boolean;
+  /** کلید ماموریتی که پنجرهٔ کارش باز است */
+  missionModalKey: string | null;
+  missionBusy: boolean;
+  loadMissions: () => Promise<void>;
+  openMission: (key: string | null) => void;
+  submitMission: (input: {
+    key: string;
+    field: string;
+    level: string;
+    day: string;
+    idx: number;
+    kind: MissionKind;
+    text: string;
+    link: string;
+    file: File | null;
+  }) => Promise<void>;
+
   enterApp: () => void;
   openMenuTarget: (target: Screen) => void;
 }
@@ -194,6 +245,10 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   drawerOpen: false,
   avatarModalOpen: false,
   onboardingDone: false,
+  missions: {},
+  missionsLoaded: false,
+  missionModalKey: null,
+  missionBusy: false,
 
   hydrate: () => {
     const appData = loadAppData();
@@ -362,10 +417,8 @@ export const useRoshd = create<RoshdState>((set, get) => ({
       const appData = { ...get().appData, users: { ...get().appData.users } };
       const u = appData.users[su.username];
       if (!u) return;
+      /* سرور مرجع است: فقط ماموریت‌های تاییدشده در آمار می‌مانند */
       const completed: Record<string, boolean> = { ...(p.completed || {}) };
-      for (const [k, v] of Object.entries(u.completed || {})) {
-        if (v) completed[k] = true;
-      }
       const badges = Array.from(
         new Set([...(p.badges || []), ...(u.badges || [])])
       );
@@ -378,8 +431,13 @@ export const useRoshd = create<RoshdState>((set, get) => ({
       };
       saveAppData(appData);
       set({ appData });
-      // هر چیزی که فقط محلی بود برای سرور فرستاده شود
       pushProgress();
+      // نشان‌های تازه بر اساس ماموریت‌های تاییدشده
+      if (u) {
+        checkBadges(u, get().pushToast);
+        saveAppData(get().appData);
+        set({ appData: { ...get().appData } });
+      }
     } catch {
       // شبکه/دسترسی: دادهٔ محلی دست‌نخورده می‌ماند
     }
@@ -426,22 +484,86 @@ export const useRoshd = create<RoshdState>((set, get) => ({
     return chosen;
   },
 
-  toggleMission: (idx) => {
-    const { appData, settings } = get();
-    const u = appData.currentUser ? appData.users[appData.currentUser] : null;
-    if (!u || !u.field) return;
-    const tk = u.field + "_" + u.level + "_" + dayKey() + "_" + idx;
-    const nowDone = !u.completed[tk];
-    u.completed[tk] = nowDone;
-    saveAppData(appData);
+  /* ---------- ماموریت‌ها: ارسال، بررسی معلم، جشن ---------- */
 
-    if (nowDone && settings.sound) playDing();
-    if (nowDone) {
-      checkBadges(u, get().pushToast);
-      checkAllDoneToday(u, get().pushToast);
+  loadMissions: async () => {
+    if (get().serverUser?.role !== "student") return;
+    try {
+      const d = await api("/api/missions");
+      const list: MissionSubmission[] = d.submissions || [];
+      const map: Record<string, MissionSubmission> = {};
+      for (const m of list) map[m.missionKey] = m;
+
+      /* ماموریت‌هایی که تازه تایید شده‌اند → جشن کوچک */
+      let seen: string[] = [];
+      try {
+        seen = JSON.parse(localStorage.getItem("roshd-seen-approved") || "[]");
+      } catch {}
+      const approvedNow = list
+        .filter((m) => m.status === "approved")
+        .map((m) => m.missionKey);
+      const fresh = approvedNow.filter((k) => !seen.includes(k));
+
+      set({ missions: map, missionsLoaded: true });
+
+      if (fresh.length) {
+        const settings = get().settings;
+        if (settings.sound) playDing();
+        fireConfetti();
+        setTimeout(
+          () =>
+            get().pushToast(
+              fresh.length > 1
+                ? `${fresh.length} ماموریتت تایید شد — آفرین!`
+                : "ماموریتت تایید شد — آفرین!"
+            ),
+          250
+        );
+        try {
+          localStorage.setItem(
+            "roshd-seen-approved",
+            JSON.stringify(Array.from(new Set([...seen, ...approvedNow])))
+          );
+        } catch {}
+        const u = get().curUser();
+        if (u) {
+          checkBadges(u, get().pushToast);
+          checkAllDoneToday(u, get().pushToast);
+          saveAppData(get().appData);
+          set({ appData: { ...get().appData } });
+        }
+      }
+    } catch {
+      set({ missionsLoaded: true });
     }
-    set({ appData: { ...appData } });
-    pushProgress();
+  },
+
+  openMission: (key) => set({ missionModalKey: key }),
+
+  submitMission: async (input) => {
+    set({ missionBusy: true });
+    try {
+      const fd = new FormData();
+      fd.append("field", input.field);
+      fd.append("level", input.level);
+      fd.append("day", input.day);
+      fd.append("idx", String(input.idx));
+      fd.append("kind", input.kind);
+      fd.append("text", input.text);
+      fd.append("link", input.link);
+      if (input.file) fd.append("file", input.file);
+
+      const d = await api("/api/missions", { method: "POST", body: fd });
+      const sub: MissionSubmission = d.submission;
+      set((st) => ({
+        missions: { ...st.missions, [sub.missionKey]: sub },
+        missionBusy: false,
+      }));
+      get().pushToast("ارسال شد — منتظر بررسی معلم باش");
+    } catch (e) {
+      set({ missionBusy: false });
+      get().pushToast(String((e as Error).message || "ارسال انجام نشد."));
+    }
   },
 
   enterApp: () => {

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRoshd, api } from "@/store/roshd";
 import { fmtDeadline, toFa } from "@/lib/jalali";
-import { FileText, Inbox, Paperclip } from "lucide-react";
+import { FileText, Inbox, Paperclip, ClipboardList, Sparkles } from "lucide-react";
+import TeacherMissions from "./teacher-missions";
 
 interface SubmissionRow {
   id: string;
@@ -31,6 +32,7 @@ export default function SubmissionsScreen() {
   const setScreen = useRoshd((s) => s.setScreen);
   const [assignments, setAssignments] = useState<SubAssignment[] | null>(null);
   const [error, setError] = useState("");
+  const [tab, setTab] = useState<"tasks" | "missions">("tasks");
 
   const load = useCallback(() => {
     api("/api/admin/submissions")
@@ -55,6 +57,43 @@ export default function SubmissionsScreen() {
 
   return (
     <>
+      <div className="page-head">
+        <h2 className="section-title">پنل معلم</h2>
+        <p className="note">
+          ارسال‌های تکالیف و ماموریت‌های روزانهٔ دانش‌آموزان — بررسی و تایید
+          همین‌جاست.
+        </p>
+      </div>
+
+      <div
+        className="mission-filters teacher-tabs"
+        role="tablist"
+        aria-label="بخش‌های پنل معلم"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "tasks"}
+          className={"mission-filter" + (tab === "tasks" ? " active" : "")}
+          onClick={() => setTab("tasks")}
+        >
+          <ClipboardList size={16} /> تکالیف ارسال‌شده
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "missions"}
+          className={"mission-filter" + (tab === "missions" ? " active" : "")}
+          onClick={() => setTab("missions")}
+        >
+          <Sparkles size={16} /> ماموریت‌های روزانه
+        </button>
+      </div>
+
+      {tab === "missions" ? <TeacherMissions /> : null}
+
+      {tab === "tasks" ? (
+        <>
       <div className="page-head">
         <h2 className="section-title">ارسال‌های دانش‌آموزان</h2>
         <p className="note">
@@ -134,6 +173,8 @@ export default function SubmissionsScreen() {
           </section>
         ))}
       </div>
+        </>
+      ) : null}
     </>
   );
 }

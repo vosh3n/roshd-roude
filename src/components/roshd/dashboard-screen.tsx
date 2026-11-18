@@ -1,25 +1,44 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRoshd, computeStreak, totalCompleted } from "@/store/roshd";
-import { FIELDS, LEVELS, BADGE_INFO, CERT_THRESHOLD } from "@/lib/missions-data";
+import { useMemo } from "react";
+import {
+  useRoshd,
+  computeStreak,
+  totalCompleted,
+  MISSION_STATUS_TEXT,
+  MissionStatus,
+} from "@/store/roshd";
+import {
+  FIELDS,
+  LEVELS,
+  BADGE_INFO,
+  CERT_THRESHOLD,
+  MISSION_KIND_TEXT,
+  missionKind,
+} from "@/lib/missions-data";
 import { toFa, dayKey } from "@/lib/jalali";
-import { Lock, Trophy } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Clock,
+  Lock,
+  MessageSquare,
+  RotateCcw,
+  Trophy,
+} from "lucide-react";
 import { BadgeIcon, FieldIcon } from "./icons";
 import UserAvatar from "./user-avatar";
+import Mascot from "./mascot";
+import ProgressPath, { PathItem } from "./progress-path";
 
 /* ---------- تب امروز: ماموریت‌ها ---------- */
 
 function MissionsTab() {
   const curUser = useRoshd((s) => s.curUser);
-  const toggleMission = useRoshd((s) => s.toggleMission);
   const missionsForToday = useRoshd((s) => s.missionsForToday);
-  const setScreen = useRoshd((s) => s.setScreen);
+  const openMission = useRoshd((s) => s.openMission);
+  const missions = useRoshd((s) => s.missions);
   const appData = useRoshd((s) => s.appData);
-  /* کدام ردیف همین الان با کلیک کاربر تغییر وضعیت داد (برای انیمیشن
-     pop-done / pop-undo). عمداً فقط حین تعامل ست می‌شود، نه در رندر
-     اولیه — وگرنه ماموریت‌های دیروزِ انجام‌شده موقع ورود به داشبورد فلش می‌زدند. */
-  const [pulse, setPulse] = useState<{ idx: number; on: boolean } | null>(null);
   const u = curUser();
   const ids = useMemo(() => missionsForToday(), [missionsForToday, appData]);
 
@@ -27,8 +46,22 @@ function MissionsTab() {
   const pool = FIELDS[u.field].missions;
   const k = u.field + "_" + u.level;
   const dk = dayKey();
+  const keyOf = (i: number) => k + "_" + dk + "_" + i;
 
-  const doneToday = ids.filter((i) => u.completed[k + "_" + dk + "_" + i]).length;
+  const items: PathItem[] = ids.map((idx, n) => {
+    const sub = missions[keyOf(idx)];
+    return {
+      key: keyOf(idx),
+      label: "ماموریت " + toFa(n + 1),
+      title: pool[idx],
+      status: sub?.status || "none",
+      kind: sub?.kind || missionKind(u.field as string, idx),
+    };
+  });
+
+  const doneToday = ids.filter((i) => u.completed[keyOf(i)]).length;
+  const pendingToday = items.filter((i) => i.status === "pending").length;
+  const revisionToday = items.filter((i) => i.status === "revision").length;
 
   // آمار هفته
   let completedThisWeek = 0;
@@ -43,12 +76,33 @@ function MissionsTab() {
   const wp = Math.min(100, Math.round((completedThisWeek / 28) * 100));
   const streak = computeStreak(u);
 
+  /* جملهٔ ماسکات بر اساس وضعیت واقعی امروز */
+  let line = "سلام! امروز ۴ کار کوچک داریم؛ کافی است یکی‌یکی شروع کنیم.";
+  let mood: "happy" | "cheer" | "think" | "sleepy" = "happy";
+  if (doneToday === ids.length && ids.length > 0) {
+    line = "حالا وقت استراحت است؛ امروز را کامل تایید گرفتی!";
+    mood = "cheer";
+  } else if (revisionToday > 0) {
+    line = "یکی از کارهات پیام معلم دارد؛ با هم درستش می‌کنیم.";
+    mood = "think";
+  } else if (pendingToday > 0) {
+    line = "ارسالت دست معلم است؛ تا بررسی شود می‌توانی ایستگاه بعدی را شروع کنی.";
+    mood = "happy";
+  } else if (doneToday > 0) {
+    line = "شروع خوبی بود! همین ریتم را نگه دار.";
+    mood = "cheer";
+  }
+
   return (
     <div className="tabpane active" id="missionsTab">
-      <div className="stats">
+      <Mascot text={line} mood={mood} />
+
+      <ProgressPath items={items} onOpen={openMission} />
+
+      <div className="stats calm-stats">
         <div className="stat">
           <b>{toFa(doneToday)}</b>
-          <span>از ۴ ماموریت امروز انجام شده</span>
+          <span>از ۴ ماموریت امروز تایید شده</span>
           <div className="progress-wrap">
             <div
               className="progress"
@@ -66,53 +120,64 @@ function MissionsTab() {
           <span>پیشرفت این هفته</span>
         </div>
       </div>
+
       <div className="card missions">
-        <h2 className="section-title">۴ ماموریت مخصوص تو</h2>
-        <div id="missionList">
+        <h2 className="section-title">کارهای امروز</h2>
+        <div id="missionList" className="mission-list">
           {ids.map((idx, n) => {
-            const done = !!u.completed[k + "_" + dk + "_" + idx];
-            /* پوشش mission-wrap: انیمیشن ورود پلکانی روی پوشش اجرا می‌شود و
-               انیمیشن‌های pop-done/pop-undo روی خودِ .mission — به این ترتیب
-               با برداشته‌شدن کلاس pop، انیمیشن ورودِ پلکانی دوباره اجرا
-               نمی‌شود (تداخل animation-name) */
+            const key = keyOf(idx);
+            const sub = missions[key];
+            const status: MissionStatus | "none" = sub ? sub.status : "none";
+            const kind = sub?.kind || missionKind(u.field as string, idx);
             return (
-              <div key={dk + "_" + idx} className="mission-wrap">
-                <div
-                  className={
-                    "mission" +
-                    (done ? " done" : "") +
-                    (pulse && pulse.idx === idx
-                      ? pulse.on
-                        ? " pop-done"
-                        : " pop-undo"
-                      : "")
-                  }
-                >
-                  <input
-                    className="check"
-                    type="checkbox"
-                    checked={done}
-                    aria-label={"ماموریت " + toFa(n + 1)}
-                    onChange={(e) => {
-                      setPulse({ idx, on: e.currentTarget.checked });
-                      toggleMission(idx);
-                    }}
-                  />
-                  <div>
-                    <div className="day">ماموریت {toFa(n + 1)}</div>
-                    <div className="mission-title">{pool[idx]}</div>
-                    <div className="mission-meta">
-                      سطح {LEVELS[u.level]} · امروز
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <button
+                key={key}
+                type="button"
+                className={"mission-card status-" + status}
+                onClick={() => openMission(key)}
+                aria-label={"باز کردن ماموریت " + toFa(n + 1)}
+              >
+                <span className="mission-card-top">
+                  <span className="day">ماموریت {toFa(n + 1)}</span>
+                  <span className={"mission-chip " + status}>
+                    {status === "approved" ? (
+                      <CheckCircle2 size={13} />
+                    ) : status === "pending" ? (
+                      <Clock size={13} />
+                    ) : status === "revision" ? (
+                      <RotateCcw size={13} />
+                    ) : null}
+                    {MISSION_STATUS_TEXT[status]}
+                  </span>
+                </span>
+                <span className="mission-title">{pool[idx]}</span>
+                <span className="mission-meta">
+                  <span className={"mission-kind " + kind}>
+                    {MISSION_KIND_TEXT[kind]}
+                  </span>
+                  سطح {LEVELS[u.level as string]} · امروز
+                </span>
+                {status === "revision" && sub?.teacherNote ? (
+                  <span className="mission-card-note">
+                    <MessageSquare size={13} /> {sub.teacherNote}
+                  </span>
+                ) : null}
+                <span className="mission-card-go">
+                  {status === "none"
+                    ? "شروع کن"
+                    : status === "revision"
+                      ? "اصلاح و ارسال دوباره"
+                      : "دیدن وضعیت"}
+                  <ChevronLeft size={15} />
+                </span>
+              </button>
             );
           })}
         </div>
         <p className="note">
-          بعد از انجام هر ماموریت، تیکش را بزن تا پیشرفتت ثبت شود. با انجام همه
-          ماموریت‌های امروز جشن می‌گیریم!
+          ماموریت وقتی «انجام‌شده» حساب می‌شود که کارت را برای معلم بفرستی و
+          معلم تاییدش کند. هر ارسال می‌تواند یک عکس، فایل، لینک یا خلاصهٔ
+          نوشتهٔ خودت باشد.
         </p>
       </div>
       <div style={{ height: "1rem" }} />
@@ -140,7 +205,7 @@ function WeekTab() {
   }
   const wp = Math.min(100, Math.round((completedThisWeek / 28) * 100));
 
-  const cells = [];
+  const cells: React.ReactNode[] = [];
   for (let x = 29; x >= 0; x--) {
     const dt = new Date();
     dt.setDate(dt.getDate() - x);

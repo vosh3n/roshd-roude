@@ -45,6 +45,37 @@ model Session {
   createdAt DateTime @default(now())
 }
 
+/**
+ * ارسال هر ماموریت روزانه توسط دانش‌آموز — همراه با وضعیت بررسی معلم.
+ * کلید یکتا: هر دانش‌آموز برای هر ماموریت (رشته_سطح_روز_شماره) یک ارسال دارد
+ * که در صورت «نیاز به اصلاح» دوباره به‌روزرسانی می‌شود.
+ */
+model MissionSubmission {
+  id          String    @id @default(cuid())
+  username    String
+  missionKey  String
+  field       String    @default("")
+  level       String    @default("")
+  day         String    @default("")
+  idx         Int       @default(0)
+  kind        String    @default("practical") // practical | reading
+  title       String    @default("")
+  text        String    @default("")
+  link        String    @default("")
+  fileId      String    @default("")
+  fileName    String    @default("")
+  fileType    String    @default("")
+  status      String    @default("pending") // pending | approved | revision
+  teacherNote String    @default("")
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([username, missionKey])
+  @@index([username, status])
+  @@index([status, updatedAt])
+}
+
 model AdminAllow {
   id        Int      @id @default(autoincrement())
   username  String   @unique

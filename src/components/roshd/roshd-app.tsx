@@ -20,7 +20,9 @@ import ParentScreen from "./parent-screen";
 import SideDrawer, { DrawerToggle } from "./side-drawer";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import AvatarModal from "./avatar-modal";
+import MissionModal from "./mission-modal";
 import OnboardingQuiz from "./onboarding-quiz";
+import { FIELD_THEME } from "@/lib/missions-data";
 
 /** اعمال تم و تنظیمات روی المان html */
 function ThemeApplier() {
@@ -47,6 +49,28 @@ function ThemeApplier() {
   return null;
 }
 
+/** رنگ هویت رشته روی المان html — برای کارت‌ها، مسیر و ماسکات */
+function FieldTheme() {
+  const appData = useRoshd((s) => s.appData);
+  const field = appData.currentUser
+    ? appData.users[appData.currentUser]?.field || ""
+    : "";
+  useEffect(() => {
+    const html = document.documentElement;
+    const theme = FIELD_THEME[field];
+    if (theme) {
+      html.setAttribute("data-field", field);
+      html.style.setProperty("--field-1", theme.color);
+      html.style.setProperty("--field-2", theme.second);
+    } else {
+      html.removeAttribute("data-field");
+      html.style.removeProperty("--field-1");
+      html.style.removeProperty("--field-2");
+    }
+  }, [field]);
+  return null;
+}
+
 /** بارگذاری وضعیت کاربر از سرور در شروع */
 function SessionLoader() {
   const hydrate = useRoshd((s) => s.hydrate);
@@ -62,6 +86,7 @@ function SessionLoader() {
         // پیشرفت ذخیره‌شده در دیتابیس را برگردان (نه فقط localStorage)
         if (d.user.role === "student") {
           useRoshd.getState().loadServerProgress();
+          useRoshd.getState().loadMissions();
         }
       })
       .catch(() => {});
@@ -171,6 +196,7 @@ export default function RoshdApp() {
   return (
     <>
       <ThemeApplier />
+      <FieldTheme />
       <SessionLoader />
       <canvas id="confetti-canvas" aria-hidden="true" />
       <OnboardingQuiz />
@@ -245,6 +271,7 @@ export default function RoshdApp() {
       )}
 
       <AvatarModal />
+      <MissionModal />
 
       {/* اعلان‌ها — پشتهٔ مرتب با انیمیشن ورود/خروج */}
       <div className="toast-stack" aria-live="polite" aria-atomic="true">
