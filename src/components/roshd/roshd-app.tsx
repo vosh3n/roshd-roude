@@ -57,7 +57,12 @@ function SessionLoader() {
     hydrate();
     api("/api/auth/me")
       .then((d) => {
-        if (d.user) bindServerUser(d.user);
+        if (!d.user) return;
+        bindServerUser(d.user);
+        // پیشرفت ذخیره‌شده در دیتابیس را برگردان (نه فقط localStorage)
+        if (d.user.role === "student") {
+          useRoshd.getState().loadServerProgress();
+        }
       })
       .catch(() => {});
   }, [hydrate, bindServerUser]);

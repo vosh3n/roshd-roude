@@ -171,6 +171,8 @@ interface RoshdState {
   removeAvatar: () => Promise<void>;
   /** هم‌گام‌سازی آدرس عکس با استور (بعد از آپلود/حذف) */
   applyAvatar: (url: string) => Promise<void>;
+  /** خواندن پیشرفت ذخیره‌شده روی سرور و ادغام با دادهٔ محلی */
+  loadServerProgress: () => Promise<void>;
   missionsForToday: () => number[];
   toggleMission: (idx: number) => void;
   enterApp: () => void;
@@ -345,6 +347,42 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   removeAvatar: async () => {
     await api("/api/avatar", { method: "DELETE" });
     await get().applyAvatar("");
+  },
+
+  /* سرور منبع اصلی داده است: پیشرفت ذخیره‌شده در SQLite هنگام ورود خوانده
+     و با دادهٔ محلی ادغام می‌شود (اجتماع تیک‌ها و نشان‌ها). بنابراین پاک شدن
+     کش مرورگر یا عوض شدن سیستم چیزی را از بین نمی‌برد. */
+  loadServerProgress: async () => {
+    const su = get().serverUser;
+    if (!su || su.role !== "student") return;
+    try {
+      const d = await api("/api/progress");
+      const p = d?.progress;
+      if (!p) return;
+      const appData = { ...get().appData, users: { ...get().appData.users } };
+      const u = appData.users[su.username];
+      if (!u) return;
+      const completed: Record<string, boolean> = { ...(p.completed || {}) };
+      for (const [k, v] of Object.entries(u.completed || {})) {
+        if (v) completed[k] = true;
+      }
+      const badges = Array.from(
+        new Set([...(p.badges || []), ...(u.badges || [])])
+      );
+      appData.users[su.username] = {
+        ...u,
+        field: p.field || u.field,
+        level: p.level || u.level,
+        completed,
+        badges,
+      };
+      saveAppData(appData);
+      set({ appData });
+      // هر چیزی که فقط محلی بود برای سرور فرستاده شود
+      pushProgress();
+    } catch {
+      // شبکه/دسترسی: دادهٔ محلی دست‌نخورده می‌ماند
+    }
   },
 
   applyAvatar: async (url) => {
