@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, jsonError, errDetail } from "@/lib/auth";
+import { currentUser, jsonError, errDetail, isTeacher } from "@/lib/auth";
 import {
   MISSION_NOTE_MAX,
   syncProgressFromMissions,
@@ -19,7 +19,7 @@ export async function POST(
   try {
     const user = await currentUser();
     if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-    if (user.role !== "admin") return jsonError("دسترسی معلم نداری.", 403);
+    if (!isTeacher(user.role)) return jsonError("دسترسی معلم نداری.", 403);
 
     const { id } = await params;
     const body = await req.json().catch(() => ({}));

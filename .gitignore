@@ -25,6 +25,9 @@ db/*.db-shm
 db/backup-*.db
 db/uploads/
 
+# عکس‌های آپلودی گالری مدرسه (فایل‌ها روی دیسک می‌مانند)
+public/uploads/
+
 # سیستم‌عامل و ادیتور
 .DS_Store
 Thumbs.db

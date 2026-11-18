@@ -33,7 +33,8 @@ export async function ensureAdmin() {
           role: "admin",
         },
       });
-    } else if (existing.role !== "admin") {
+    } else if (existing.role !== "admin" && existing.role !== "superadmin") {
+      // نقش «مدیر سایت» را پایین نمی‌آوریم
       await db.user.update({
         where: { username: MAIN_ADMIN.username },
         data: { role: "admin" },

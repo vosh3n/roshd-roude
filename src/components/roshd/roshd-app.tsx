@@ -17,6 +17,7 @@ import SettingsScreen from "./settings-screen";
 import RankingScreen from "./ranking-screen";
 import UserAvatar from "./user-avatar";
 import ParentScreen from "./parent-screen";
+import AdminPanelScreen from "./admin-panel-screen";
 import SideDrawer, { DrawerToggle } from "./side-drawer";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import AvatarModal from "./avatar-modal";
@@ -127,6 +128,7 @@ const SCREENS: Record<
   ranking: { id: "rankingScreen", Comp: RankingScreen },
   settings: { id: "settingsScreen", Comp: SettingsScreen },
   parent: { id: "parentScreen", Comp: ParentScreen },
+  admin: { id: "adminScreen", Comp: AdminPanelScreen },
 };
 
 /** اعلان تکی: ورود فنری + خروج نرم — چرخهٔ عمر خودش را مدیریت می‌کند
@@ -174,9 +176,11 @@ export default function RoshdApp() {
   const homeScreen =
     serverUser?.role === "parent"
       ? "parent"
-      : serverUser?.role === "admin"
-        ? "submissions"
-        : "dashboard";
+      : serverUser?.role === "superadmin"
+        ? "admin"
+        : serverUser?.role === "admin"
+          ? "submissions"
+          : "dashboard";
   const canGoBack = screen !== "landing" && screen !== homeScreen;
   /* دکمهٔ بازگشت همیشه یک‌جای ثابت: گوشهٔ آغازین نوار بالا (کنار تیتر)
      با اندازهٔ ۴۴px و فاصلهٔ یکسان؛ در صفحه‌های خانه نمایش داده نمی‌شود. */
@@ -224,15 +228,20 @@ export default function RoshdApp() {
             <div className="subtitle">
               {serverUser?.role === "admin"
                 ? "پنل معلم — مدیریت تکالیف، ویدیوها و ارسال‌ها"
-                : "هر روز ۴ ماموریت، متناسب با رشته و سطح تو"}
+                : serverUser?.role === "superadmin"
+                  ? "پنل مدیر سایت — گالری، اطلاعیه‌ها، تقویم و پیام‌ها"
+                  : "هر روز ۴ ماموریت، متناسب با رشته و سطح تو"}
             </div>
           </div>
           {inApp && serverUser ? (
             <div className="topbar-right">
               <span className="username-chip">
                 {u?.name || serverUser.name}
-                {serverUser.role === "admin" ? (
-                  <small className="role-tag">{ROLE_LABEL.admin}</small>
+                {serverUser.role === "admin" ||
+                serverUser.role === "superadmin" ? (
+                  <small className="role-tag">
+                    {ROLE_LABEL[serverUser.role]}
+                  </small>
                 ) : null}
               </span>
               <button

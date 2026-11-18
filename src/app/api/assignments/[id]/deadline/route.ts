@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, roleOf, jsonError } from "@/lib/auth";
+import { currentUser, roleOf, jsonError, isTeacher } from "@/lib/auth";
 
 export async function POST(
   req: NextRequest,
@@ -8,7 +8,7 @@ export async function POST(
 ) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if ((await roleOf(user.username)) !== "admin")
+  if (!isTeacher(await roleOf(user.username)))
     return jsonError("دسترسی مدیر نداری.", 403);
 
   const { id } = await params;

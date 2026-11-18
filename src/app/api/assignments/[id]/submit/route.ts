@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, roleOf, UPLOAD_DIR, MAX_FILE_SIZE, jsonError } from "@/lib/auth";
+import { currentUser, roleOf, UPLOAD_DIR, MAX_FILE_SIZE, jsonError, isTeacher } from "@/lib/auth";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if ((await roleOf(user.username)) === "admin")
+  if (isTeacher(await roleOf(user.username)))
     return jsonError("مدیر از این مسیر تکلیف ارسال نمی‌کند.", 403);
 
   const { id } = await params;

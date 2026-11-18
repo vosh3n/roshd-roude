@@ -25,6 +25,7 @@ import {
   UserRound,
 } from "lucide-react";
 import UserAvatar from "./user-avatar";
+import PasswordCard from "./password-card";
 import { ROLE_LABEL } from "@/lib/role-labels";
 
 /* ---------- کارت پیش‌نمایش یک تم ---------- */
@@ -373,6 +374,8 @@ export default function SettingsScreen() {
           </div>
         </div>
       ) : null}
+
+      <PasswordCard />
 
       {/* درباره */}
       <div className="card settings-section">

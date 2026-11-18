@@ -79,13 +79,14 @@ export type Screen =
   | "submissions"
   | "settings"
   | "ranking"
-  | "parent";
+  | "parent"
+  | "admin";
 
 export interface ServerUser {
   username: string;
   name: string;
   email?: string;
-  role: "admin" | "student" | "parent";
+  role: "admin" | "student" | "parent" | "superadmin";
   /** آدرس عکس پروفایل (خالی = بدون عکس) */
   avatar?: string;
 }
@@ -209,6 +210,9 @@ interface RoshdState {
   /** ارسال‌های ماموریت‌ها (کلید = missionKey) */
   missions: Record<string, MissionSubmission>;
   missionsLoaded: boolean;
+  /** تعداد اطلاعیه‌های خوانده‌نشده — نشان روی منوی اولیا */
+  announcementUnread: number;
+  setAnnouncementUnread: (n: number) => void;
   /** کلید ماموریتی که پنجرهٔ کارش باز است */
   missionModalKey: string | null;
   missionBusy: boolean;
@@ -247,6 +251,8 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   onboardingDone: false,
   missions: {},
   missionsLoaded: false,
+  announcementUnread: 0,
+  setAnnouncementUnread: (n) => set({ announcementUnread: Math.max(0, n | 0) }),
   missionModalKey: null,
   missionBusy: false,
 
@@ -572,7 +578,13 @@ export const useRoshd = create<RoshdState>((set, get) => ({
       set({ pendingSection: null, screen: "parent" });
       return;
     }
-    // مدیر وارد صفحهٔ ارسال‌ها می‌شود (به انتخاب رشته/سطح نیازی ندارد)
+    // مدیر سایت وارد پنل مدیریت می‌شود
+    if (get().serverUser?.role === "superadmin") {
+      const pendingSuper = get().pendingSection;
+      set({ pendingSection: null, screen: pendingSuper || "admin" });
+      return;
+    }
+    // معلم وارد صفحهٔ ارسال‌ها می‌شود (به انتخاب رشته/سطح نیازی ندارد)
     if (get().serverUser?.role === "admin") {
       const pendingAdmin = get().pendingSection;
       set({ pendingSection: null, screen: pendingAdmin || "submissions" });

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, jsonError } from "@/lib/auth";
+import { currentUser, jsonError, isTeacher } from "@/lib/auth";
 import { missionDto, isMissionStatus } from "@/lib/missions-server";
 
 /**
@@ -10,7 +10,7 @@ import { missionDto, isMissionStatus } from "@/lib/missions-server";
 export async function GET(req: NextRequest) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if (user.role !== "admin") return jsonError("دسترسی معلم نداری.", 403);
+  if (!isTeacher(user.role)) return jsonError("دسترسی معلم نداری.", 403);
 
   const statusParam = req.nextUrl.searchParams.get("status");
   const where = isMissionStatus(statusParam) ? { status: statusParam } : {};

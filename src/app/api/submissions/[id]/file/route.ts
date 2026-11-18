@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, UPLOAD_DIR, roleOf, jsonError } from "@/lib/auth";
+import { currentUser, UPLOAD_DIR, roleOf, jsonError, isTeacher } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -15,7 +15,7 @@ export async function GET(
   const s = await db.submission.findUnique({ where: { id } });
   if (!s) return jsonError("ارسال پیدا نشد.", 404);
   const role = await roleOf(user.username);
-  if (s.user !== user.username && role !== "admin" && role !== "parent")
+  if (s.user !== user.username && !isTeacher(role) && role !== "parent")
     return jsonError("دسترسی به این فایل نداری.", 403);
 
   const which = req.nextUrl.searchParams.get("extra") === "1" ? "extraId" : "fileId";

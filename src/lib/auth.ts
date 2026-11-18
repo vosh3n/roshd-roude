@@ -37,7 +37,22 @@ export function checkPass(password: string, salt: string, hash: string) {
   return saved.length === h.length && crypto.timingSafeEqual(saved, h);
 }
 
-export type Role = "student" | "admin" | "parent";
+export type Role = "student" | "admin" | "parent" | "superadmin";
+
+/** مدیر سایت — بالاترین سطح دسترسی */
+export function isSuperAdmin(role?: string | null) {
+  return role === "superadmin";
+}
+
+/** معلم یا مدیر سایت — دسترسی به بخش‌های مدیریتی محتوا */
+export function isTeacher(role?: string | null) {
+  return role === "admin" || role === "superadmin";
+}
+
+/** والد، معلم یا مدیر سایت — دیدن دادهٔ دانش‌آموزان */
+export function canViewStudents(role?: string | null) {
+  return isTeacher(role) || role === "parent";
+}
 
 export async function roleOf(username: string): Promise<Role> {
   try {

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, roleOf, jsonError, UPLOAD_DIR } from "@/lib/auth";
+import { currentUser, roleOf, jsonError, UPLOAD_DIR, isTeacher } from "@/lib/auth";
 import fs from "fs";
 import path from "path";
 
@@ -10,7 +10,7 @@ export async function DELETE(
 ) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if ((await roleOf(user.username)) !== "admin")
+  if (!isTeacher(await roleOf(user.username)))
     return jsonError("دسترسی مدیر نداری.", 403);
 
   const { id } = await params;

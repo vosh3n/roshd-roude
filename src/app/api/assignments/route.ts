@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, roleOf, jsonError } from "@/lib/auth";
+import { currentUser, roleOf, jsonError, isTeacher } from "@/lib/auth";
 
 export async function GET() {
   const user = await currentUser();
@@ -39,7 +39,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if ((await roleOf(user.username)) !== "admin")
+  if (!isTeacher(await roleOf(user.username)))
     return jsonError("دسترسی مدیر نداری.", 403);
 
   try {

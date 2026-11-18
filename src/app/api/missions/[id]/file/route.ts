@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import fs from "fs";
 import path from "path";
 import { db } from "@/lib/db";
-import { currentUser, jsonError } from "@/lib/auth";
+import { currentUser, jsonError, isTeacher } from "@/lib/auth";
 import { MISSIONS_DIR } from "@/lib/missions-server";
 
 /**
@@ -19,7 +19,7 @@ export async function GET(
   const { id } = await params;
   const row = await db.missionSubmission.findUnique({ where: { id } });
   if (!row) return jsonError("ارسال پیدا نشد.", 404);
-  if (row.username !== user.username && user.role !== "admin")
+  if (row.username !== user.username && !isTeacher(user.role))
     return jsonError("دسترسی به این فایل نداری.", 403);
   if (!row.fileId) return jsonError("فایل پیدا نشد.", 404);
 

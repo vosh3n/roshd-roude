@@ -13,6 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "user": "node scripts/manage-user.mjs",
+    "seed:superadmin": "node scripts/seed-superadmin.mjs",
     "emoji:sync": "node scripts/emoji-sync.mjs"
   },
   "dependencies": {

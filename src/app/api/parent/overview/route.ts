@@ -1,5 +1,12 @@
+import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, jsonError, avatarUrl } from "@/lib/auth";
+import { dayKey } from "@/lib/jalali";
+import {
+  currentUser,
+  jsonError,
+  avatarUrl,
+  isTeacher,
+} from "@/lib/auth";
 
 function safeParse<T>(raw: string, fallback: T): T {
   try {
@@ -11,23 +18,35 @@ function safeParse<T>(raw: string, fallback: T): T {
 }
 
 /**
- * GET /api/parent/overview — نمای کلی پنل مشاهدهٔ اولیا
- * دسترسی: والد یا ادمین
- * خروجی: { students: [{ username, name, avatar?, field, level, completed, badges, updatedAt, submissions }] }
+ * GET /api/parent/overview[?child=username] — نمای کلی فرزندان
+ * - والد: فقط دانش‌آموزانی که parentUsername آن‌ها نام والد است
+ * - معلم / مدیر سایت: همهٔ دانش‌آموزان
+ * خروجی: { students: [...] }
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if (user.role !== "parent" && user.role !== "admin")
-    return jsonError("این بخش فقط برای اولیا و ادمین است.", 403);
+  if (user.role !== "parent" && !isTeacher(user.role))
+    return jsonError("این بخش فقط برای اولیا و معلم است.", 403);
+
+  const child = (req.nextUrl.searchParams.get("child") || "").trim();
+
+  const where =
+    user.role === "parent"
+      ? { role: "student", parentUsername: user.username }
+      : { role: "student" };
 
   const students = await db.user.findMany({
-    where: { role: "student" },
+    where: child ? { ...where, username: child } : where,
     orderBy: { username: "asc" },
     include: { progress: true },
+    take: 300,
   });
 
+  const usernames = students.map((s) => s.username);
+
   const submissions = await db.submission.findMany({
+    where: { user: { in: usernames } },
     orderBy: { at: "desc" },
     include: { assignment: { select: { title: true } } },
   });
@@ -40,6 +59,7 @@ export async function GET() {
 
   /* وضعیت ماموریت‌ها — فقط برای مشاهده در پنل اولیا */
   const missions = await db.missionSubmission.findMany({
+    where: { username: { in: usernames } },
     orderBy: { updatedAt: "desc" },
   });
   const missionsByUser = new Map<string, typeof missions>();
@@ -66,17 +86,27 @@ export async function GET() {
       else if (m.status === "approved") missionStats.approved++;
       else if (m.status === "revision") missionStats.revision++;
     }
-    const missionRecent = myMissions.slice(0, 5).map((m) => ({
+    const missionRecent = myMissions.slice(0, 8).map((m) => ({
       title: m.title,
       status: m.status,
       teacherNote: m.teacherNote,
+      day: m.day,
       at: m.updatedAt.toISOString(),
     }));
+    const today = dayKey();
+    const missionToday = myMissions
+      .filter((m) => m.day === today)
+      .map((m) => ({
+        title: m.title,
+        status: m.status,
+        teacherNote: m.teacherNote,
+        day: m.day,
+        at: m.updatedAt.toISOString(),
+      }));
 
     return {
       username: st.username,
       name: st.name,
-      // آدرس عکس پروفایل؛ اگر عکسی نباشد رشتهٔ خالی برمی‌گردد
       avatar: avatarUrl(st.username, st.avatar),
       field: p?.field || "",
       level: p?.level || "",
@@ -86,6 +116,7 @@ export async function GET() {
       submissions: subs,
       missionStats,
       missionRecent,
+      missionToday,
     };
   });
 

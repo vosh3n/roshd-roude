@@ -14,7 +14,9 @@ model User {
   email      String? // برای بازیابی رمز عبور
   salt       String
   hash       String
-  role       String    @default("student") // "student" | "admin" | "parent"
+  role       String    @default("student") // "student" | "admin" | "parent" | "superadmin"
+  /** نام کاربری والد این دانش‌آموز — اتصال والد به فرزند (خالی = بدون والد) */
+  parentUsername String @default("")
   avatar     String    @default("") // نام فایل عکس پروفایل در db/uploads/avatars
   avatarType String    @default("") // mime عکس پروفایل
   createdAt  DateTime  @default(now())
@@ -74,6 +76,75 @@ model MissionSubmission {
   @@unique([username, missionKey])
   @@index([username, status])
   @@index([status, updatedAt])
+}
+
+/** آلبوم گالری مدرسه — کاور و عکس‌ها در public/uploads/gallery ذخیره می‌شوند */
+model GalleryAlbum {
+  id          String         @id @default(cuid())
+  title       String
+  description String         @default("")
+  cover       String         @default("") // نام فایل تصادفی کاور
+  sort        Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  photos      GalleryPhoto[]
+}
+
+model GalleryPhoto {
+  id        String       @id @default(cuid())
+  albumId   String
+  album     GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  file      String // نام فایل تصادفی در public/uploads/gallery
+  caption   String       @default("")
+  sort      Int          @default(0)
+  createdAt DateTime     @default(now())
+
+  @@index([albumId, sort])
+}
+
+/** اطلاعیهٔ مدرسه/معلم — خوانده‌شدن هر والد در AnnouncementRead ثبت می‌شود */
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  important Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnnouncementRead {
+  username       String
+  announcementId String
+  readAt         DateTime @default(now())
+
+  @@id([username, announcementId])
+}
+
+/** رویداد تقویم مدرسه (جلسهٔ اولیا، امتحان، اردو، تعطیلی) */
+model SchoolEvent {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @default("")
+  kind        String   @default("event") // meeting | exam | trip | holiday | event
+  startsAt    DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([startsAt])
+}
+
+/** پیام والد به معلم — با پاسخ معلم (status: sent | answered) */
+model ParentMessage {
+  id             String    @id @default(cuid())
+  parentUsername String
+  studentUsername String   @default("")
+  subject        String
+  body           String
+  reply          String    @default("")
+  status         String    @default("sent") // sent | answered
+  createdAt      DateTime  @default(now())
+  repliedAt      DateTime?
+
+  @@index([parentUsername, createdAt])
 }
 
 model AdminAllow {

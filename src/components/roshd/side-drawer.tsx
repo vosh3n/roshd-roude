@@ -2,13 +2,16 @@
 
 import { useEffect } from "react";
 import {
+  ClipboardCheck,
   ClipboardList,
   Compass,
   LayoutDashboard,
   LogOut,
+  Megaphone,
   Menu,
   PlayCircle,
   Settings,
+  ShieldCheck,
   Trophy,
   Users,
   X,
@@ -29,22 +32,60 @@ const NAV: {
   Icon: LucideIcon;
   roles: Role[];
 }[] = [
-  { target: "dashboard", label: "داشبورد", Icon: LayoutDashboard, roles: ["student"] },
-  { target: "tasks", label: "تکالیف", Icon: ClipboardList, roles: ["student", "admin"] },
+  {
+    target: "dashboard",
+    label: "داشبورد",
+    Icon: LayoutDashboard,
+    roles: ["student", "superadmin"],
+  },
+  {
+    target: "tasks",
+    label: "تکالیف",
+    Icon: ClipboardList,
+    roles: ["student", "admin", "superadmin"],
+  },
   {
     target: "videos",
     label: "ویدیوهای آموزشی",
     Icon: PlayCircle,
-    roles: ["student", "admin"],
+    roles: ["student", "admin", "superadmin"],
   },
-  { target: "ranking", label: "رتبه‌بندی", Icon: Trophy, roles: ["student", "admin"] },
+  {
+    target: "ranking",
+    label: "رتبه‌بندی",
+    Icon: Trophy,
+    roles: ["student", "admin", "superadmin"],
+  },
   { target: "field", label: "رشته و سطح", Icon: Compass, roles: ["student"] },
-  { target: "parent", label: "پنل اولیا", Icon: Users, roles: ["parent"] },
+  {
+    target: "parent",
+    label: "پنل اولیا",
+    Icon: Users,
+    roles: ["parent", "superadmin"],
+  },
+  {
+    target: "admin",
+    label: "مدیریت سایت",
+    Icon: ShieldCheck,
+    roles: ["superadmin"],
+  },
+  {
+    target: "submissions",
+    label: "ارسال‌های ماموریت",
+    Icon: ClipboardCheck,
+    roles: ["admin"],
+  },
+  {
+    target: "admin",
+    label: "اطلاعیه‌ها و پیام‌ها",
+    Icon: Megaphone,
+    roles: ["admin"],
+  },
   {
     target: "settings",
     label: "تنظیمات",
     Icon: Settings,
-    roles: ["student", "admin", "parent"],
+    roles: ["student", "admin", "parent", "superadmin"],
   },
 ];
 
@@ -77,6 +118,7 @@ export default function SideDrawer({ open }: { open: boolean }) {
   const serverUser = useRoshd((s) => s.serverUser);
   const logout = useRoshd((s) => s.logout);
   const screen = useRoshd((s) => s.screen);
+  const unread = useRoshd((s) => s.announcementUnread);
 
   const close = () => setDrawerOpen(false);
 
@@ -159,7 +201,7 @@ export default function SideDrawer({ open }: { open: boolean }) {
         <nav className="drawer-nav" aria-label="بخش‌های سایت">
           {items.map(({ target, label, Icon }) => (
             <button
-              key={target}
+              key={label}
               type="button"
               className={"drawer-item" + (screen === target ? " active" : "")}
               aria-current={screen === target ? "page" : undefined}
@@ -167,6 +209,11 @@ export default function SideDrawer({ open }: { open: boolean }) {
             >
               <Icon size={18} aria-hidden="true" />
               <span>{label}</span>
+              {target === "parent" && unread > 0 ? (
+                <span className="drawer-badge" aria-label={`${unread} اطلاعیهٔ خوانده‌نشده`}>
+                  {unread > 9 ? "۹+" : unread.toLocaleString("fa-IR")}
+                </span>
+              ) : null}
             </button>
           ))}
         </nav>
