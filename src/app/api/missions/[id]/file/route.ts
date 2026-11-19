@@ -19,8 +19,16 @@ export async function GET(
   const { id } = await params;
   const row = await db.missionSubmission.findUnique({ where: { id } });
   if (!row) return jsonError("ارسال پیدا نشد.", 404);
-  if (row.username !== user.username && !isTeacher(user.role))
-    return jsonError("دسترسی به این فایل نداری.", 403);
+  let allowed = row.username === user.username || isTeacher(user.role);
+  /* والد فقط برای فرزند وصل‌شده به خودش و فقط کار تاییدشده */
+  if (!allowed && user.role === "parent" && row.status === "approved") {
+    const child = await db.user.findFirst({
+      where: { username: row.username, parentUsername: user.username },
+      select: { username: true },
+    });
+    allowed = !!child;
+  }
+  if (!allowed) return jsonError("دسترسی به این فایل نداری.", 403);
   if (!row.fileId) return jsonError("فایل پیدا نشد.", 404);
 
   const filePath = path.join(MISSIONS_DIR, row.fileId);

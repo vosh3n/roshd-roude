@@ -47,7 +47,7 @@ async function main() {
 
   const username = (process.env.REP_USERNAME || "").trim();
   const password = process.env.REP_PASSWORD || "";
-  const classRoom = (process.env.REP_CLASS || "").trim();
+  const className = (process.env.REP_CLASS || "کلاس ۱").trim();
   const resetPassword = process.argv.includes("--reset-password");
 
   if (!username || !password) {
@@ -77,7 +77,6 @@ async function main() {
           salt,
           hash,
           role: "educational_rep",
-          classRoom,
           active: true,
         },
       });
@@ -96,6 +95,19 @@ async function main() {
         `[seed:rep] «${username}» از قبل نمایندهٔ آموزشی است؛ چیزی تغییر نکرد.`
       );
     }
+
+    /* ---- کلاس پیش‌فرض نماینده (ایدپوتنت) ---- */
+    let cls = await db.schoolClass.findUnique({ where: { name: className } });
+    if (!cls)
+      cls = await db.schoolClass.create({
+        data: { name: className, year: "", active: true, repUsername: username },
+      });
+    await db.schoolClass.update({
+      where: { id: cls.id },
+      data: { repUsername: username, active: true },
+    });
+    await db.user.update({ where: { username }, data: { classId: cls.id } });
+    console.log(`[seed:rep] نماینده به «${cls.name}» وصل شد.`);
 
     const count = await db.user.count({ where: { role: "educational_rep" } });
     console.log(`[seed:rep] تعداد نماینده‌های آموزشی: ${count}`);

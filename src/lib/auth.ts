@@ -100,6 +100,8 @@ export async function currentUser() {
     email: session.user.email || "",
     role,
     avatar: avatarUrl(session.user.username, session.user.avatar),
+    guideSeen: session.user.guideSeen !== false,
+    classId: session.user.classId || "",
   };
 }
 

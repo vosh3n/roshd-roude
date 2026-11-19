@@ -44,10 +44,13 @@ export async function GET(
     },
   });
   const fileName = which === "extraId" ? s.extraName : s.fileName;
+  /* برای پیش‌نمایش نمایشگاه، عکس/ویدیو به‌صورت inline سرو می‌شود */
+  const inline = req.nextUrl.searchParams.get("inline") === "1";
   return new Response(readable, {
     headers: {
       "Content-Type": "application/octet-stream",
-      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+      "Cache-Control": "private, no-store",
     },
   });
 }

@@ -16,6 +16,8 @@
     "seed:superadmin": "node scripts/seed-superadmin.mjs",
     "seed:teacher": "node scripts/seed-teacher.mjs",
     "seed:rep": "node scripts/seed-rep.mjs",
+    "seed:test": "node scripts/seed-test.mjs",
+    "seed:test:remove": "node scripts/seed-test-remove.mjs",
     "emoji:sync": "node scripts/emoji-sync.mjs"
   },
   "dependencies": {

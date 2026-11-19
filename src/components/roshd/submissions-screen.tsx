@@ -19,6 +19,7 @@ interface SubmissionRow {
 interface SubAssignment {
   id: string;
   title: string;
+  className: string;
   deadline: string;
   expired: boolean;
   submissions: SubmissionRow[];
@@ -33,12 +34,24 @@ export default function SubmissionsScreen() {
   const [assignments, setAssignments] = useState<SubAssignment[] | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"tasks" | "missions">("tasks");
+  const [classId, setClassId] = useState("");
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    api("/api/classes")
+      .then((d) => setClasses(d.classes || []))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(() => {
-    api("/api/admin/submissions")
+    api(
+      "/api/admin/submissions" +
+        (classId ? "?classId=" + encodeURIComponent(classId) : "")
+    )
       .then((d) => {
         setAssignments(d.assignments);
         setError("");
+        if (d.classes?.length) setClasses(d.classes);
       })
       .catch((e) => {
         setError(e.message);
@@ -49,7 +62,7 @@ export default function SubmissionsScreen() {
         )
           setScreen("tasks");
       });
-  }, [setScreen]);
+  }, [setScreen, classId]);
 
   useEffect(() => {
     load();
@@ -68,6 +81,21 @@ export default function SubmissionsScreen() {
           ارسال‌های تکالیف و ماموریت‌های روزانهٔ دانش‌آموزان — بررسی و تایید
           همین‌جاست.
         </p>
+        <label className="sa-mini teacher-class-filter">
+          <span>فیلتر کلاس</span>
+          <select
+            value={classId}
+            onChange={(e) => setClassId(e.target.value)}
+            aria-label="فیلتر بر اساس کلاس"
+          >
+            <option value="">همهٔ کلاس‌ها</option>
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div
@@ -126,6 +154,9 @@ export default function SubmissionsScreen() {
           <section key={a.id} className="card sub-card">
             <header className="sub-card-head">
               <b>{a.title}</b>
+              {a.className ? (
+                <span className="sa-chip class">{a.className}</span>
+              ) : null}
               <span className={"status-pill" + (a.expired ? " late" : "")}>
                 {a.expired ? "مهلت گذشته" : "باز"}
               </span>

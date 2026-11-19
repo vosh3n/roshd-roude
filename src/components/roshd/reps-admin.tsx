@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, Plus, Power, RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { Loader2, Plus, Power, RotateCcw, Trash2, UserPlus } from "lucide-react";
 import { api, useRoshd } from "@/store/roshd";
 import { fmtDeadline, toFa } from "@/lib/jalali";
 import EmptyState from "./empty-state";
@@ -16,9 +16,16 @@ interface RepRow {
   username: string;
   name: string;
   email: string;
-  classRoom: string;
+  classId: string;
+  className: string;
   active: boolean;
   createdAt: string;
+}
+
+interface ClassOption {
+  id: string;
+  name: string;
+  active: boolean;
 }
 
 export default function RepsAdmin() {
@@ -29,15 +36,16 @@ export default function RepsAdmin() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [classRoom, setClassRoom] = useState("");
+  const [repClass, setRepClass] = useState("");
 
   const [passwords, setPasswords] = useState<Record<string, string>>({});
-  const [classes, setClasses] = useState<Record<string, string>>({});
+  const [classList, setClassList] = useState<ClassOption[]>([]);
 
   const load = useCallback(async () => {
     try {
       const d = await api("/api/admin/reps");
       setRows(d.reps || []);
+      setClassList(d.classes || []);
     } catch (e) {
       pushToast((e as Error).message);
       setRows([]);
@@ -57,12 +65,12 @@ export default function RepsAdmin() {
       await api("/api/admin/reps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, username, password, classRoom }),
+        body: JSON.stringify({ name, username, password, classId: repClass }),
       });
       setName("");
       setUsername("");
       setPassword("");
-      setClassRoom("");
+      setRepClass("");
       pushToast("حساب نمایندهٔ آموزشی ساخته شد.");
       await load();
     } catch (e) {
@@ -158,14 +166,18 @@ export default function RepsAdmin() {
               />
             </label>
             <label className="mission-field">
-              <span>کلاس (اختیاری)</span>
-              <input
-                type="text"
-                maxLength={60}
-                value={classRoom}
-                onChange={(e) => setClassRoom(e.target.value)}
-                placeholder="مثلاً ۹۰۱"
-              />
+              <span>کلاس مسئولیت (اختیاری)</span>
+              <select
+                value={repClass}
+                onChange={(e) => setRepClass(e.target.value)}
+              >
+                <option value="">— بدون کلاس —</option>
+                {classList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.active ? "" : " (غیرفعال)"}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
           <button type="button" className="btn" disabled={busy === "new"} onClick={create}>
@@ -202,7 +214,7 @@ export default function RepsAdmin() {
                   <small>@{r.username}</small>
                 </div>
                 <div className="sa-student-chips">
-                  <span className="sa-chip">{r.classRoom || "بدون کلاس"}</span>
+                  <span className="sa-chip">{r.className || "بدون کلاس"}</span>
                   <span className={"sa-chip " + (r.active ? "on" : "off")}>
                     {r.active ? "فعال" : "غیرفعال"}
                   </span>
@@ -217,36 +229,22 @@ export default function RepsAdmin() {
 
               <div className="sa-student-actions">
                 <label className="sa-mini">
-                  <span>کلاس</span>
-                  <span className="sa-inline">
-                    <input
-                      type="text"
-                      maxLength={60}
-                      value={classes[r.username] ?? r.classRoom}
-                      onChange={(e) =>
-                        setClasses((c) => ({
-                          ...c,
-                          [r.username]: e.target.value,
-                        }))
-                      }
-                      aria-label={`کلاس ${r.name}`}
-                    />
-                    <button
-                      type="button"
-                      className="iconbtn"
-                      aria-label="ذخیرهٔ کلاس"
-                      disabled={busy === r.username}
-                      onClick={() =>
-                        patch(
-                          r.username,
-                          { classRoom: classes[r.username] ?? r.classRoom },
-                          "کلاس ذخیره شد."
-                        )
-                      }
-                    >
-                      <Check size={15} />
-                    </button>
-                  </span>
+                  <span>کلاس مسئولیت</span>
+                  <select
+                    value={r.classId}
+                    disabled={busy === r.username}
+                    onChange={(e) =>
+                      patch(r.username, { classId: e.target.value }, "کلاس نماینده ذخیره شد.")
+                    }
+                    aria-label={`کلاس ${r.name}`}
+                  >
+                    <option value="">— بدون کلاس —</option>
+                    {classList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}{c.active ? "" : " (غیرفعال)"}
+                      </option>
+                    ))}
+                  </select>
                 </label>
 
                 <label className="sa-mini">

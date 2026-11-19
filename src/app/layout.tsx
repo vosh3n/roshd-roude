@@ -4,6 +4,7 @@ import "./globals.css";
 import "./calm.css";
 import "./calm-school.css";
 import "./calm-admin.css";
+import "./calm-growth.css";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],

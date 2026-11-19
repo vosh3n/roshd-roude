@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Bell,
   CalendarDays,
+  CalendarRange,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -44,6 +45,8 @@ import {
 import { BadgeIcon } from "./icons";
 import UserAvatar from "./user-avatar";
 import SchoolGallery from "./school-gallery";
+import ShowcaseGallery from "./showcase-gallery";
+import WeeklyReport from "./weekly-report";
 import EmptyState from "./empty-state";
 import Mascot from "./mascot";
 import "./parent.css";
@@ -110,11 +113,20 @@ interface MessageRow {
   studentUsername: string;
 }
 
-type Section = "gallery" | "child" | "news" | "calendar" | "messages";
+type Section =
+  | "gallery"
+  | "child"
+  | "showcase"
+  | "reports"
+  | "news"
+  | "calendar"
+  | "messages";
 
 const SECTIONS: { id: Section; label: string; Icon: typeof Images }[] = [
   { id: "gallery", label: "گالری مدرسه", Icon: Images },
   { id: "child", label: "وضعیت فرزند", Icon: UserRound },
+  { id: "showcase", label: "نمایشگاه فرزند", Icon: Sparkles },
+  { id: "reports", label: "گزارش هفتگی", Icon: CalendarRange },
   { id: "news", label: "اطلاعیه‌ها", Icon: Megaphone },
   { id: "calendar", label: "تقویم مدرسه", Icon: CalendarDays },
   { id: "messages", label: "ارتباط با معلم", Icon: MessageCircle },
@@ -173,6 +185,8 @@ export default function ParentScreen() {
   const serverUser = useRoshd((s) => s.serverUser);
   const pushToast = useRoshd((s) => s.pushToast);
   const setAnnouncementUnread = useRoshd((s) => s.setAnnouncementUnread);
+  const reportUnread = useRoshd((s) => s.reportUnread);
+  const setReportUnread = useRoshd((s) => s.setReportUnread);
 
   const [section, setSection] = useState<Section>("gallery");
   const [children, setChildren] = useState<Child[] | null>(null);
@@ -203,11 +217,17 @@ export default function ParentScreen() {
       setAnnouncementUnread(an.unread || 0);
       setChildName((prev) => prev || ov.students?.[0]?.username || "");
       setError("");
+      /* نشان «گزارش جدید» — گزارش هفتهٔ جاری با اولین بازدید ساخته می‌شود */
+      if (ov.students?.length) {
+        api("/api/parent/reports")
+          .then((rp) => setReportUnread(rp.unread || 0))
+          .catch(() => {});
+      }
     } catch (e) {
       setError((e as Error).message);
       setChildren([]);
     }
-  }, [setAnnouncementUnread]);
+  }, [setAnnouncementUnread, setReportUnread]);
 
   useEffect(() => {
     load();
@@ -330,6 +350,9 @@ export default function ParentScreen() {
             {id === "news" && unreadCount ? (
               <span className="parent-count">{toFa(unreadCount)}</span>
             ) : null}
+            {id === "reports" && reportUnread ? (
+              <span className="parent-count new">گزارش جدید</span>
+            ) : null}
           </button>
         ))}
         <button
@@ -372,6 +395,27 @@ export default function ParentScreen() {
             icon={<Sprout size={26} />}
           />
         )
+      ) : null}
+
+      {/* ۲.۵) نمایشگاه کارهای فرزند — فقط مشاهده */}
+      {section === "showcase" ? (
+        child ? (
+          <ShowcaseGallery student={child.username} />
+        ) : (
+          <EmptyState
+            title="هنوز فرزندی به حسابت وصل نشده"
+            hint="بعد از اتصال حساب فرزند، کارهای تاییدشده‌اش این‌جا قاب می‌گیرند."
+            icon={<Sprout size={26} />}
+          />
+        )
+      ) : null}
+
+      {/* ۲.۶) گزارش هفتگی */}
+      {section === "reports" ? (
+        <WeeklyReport
+          child={child ? { username: child.username, name: child.name } : null}
+          onSeen={() => setReportUnread(0)}
+        />
       ) : null}
 
       {/* ۳) اطلاعیه‌ها */}

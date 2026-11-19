@@ -37,6 +37,8 @@ export async function GET() {
           name: true,
           email: true,
           parentUsername: true,
+          classId: true,
+          clazz: { select: { name: true } },
           createdAt: true,
         },
         orderBy: { createdAt: "asc" },
@@ -79,6 +81,8 @@ export async function GET() {
         level: p?.level || "",
         parentUsername: s.parentUsername || "",
         parentName: parentName.get(s.parentUsername || "") || "",
+        classId: s.classId || "",
+        className: s.clazz?.name || "",
         approved: m.approved,
         pending: m.pending,
         tasks: taskBy.get(s.username) || 0,
@@ -119,6 +123,19 @@ export async function PATCH(req: NextRequest) {
     const { salt, hash } = hashPass(body.password);
     data.salt = salt;
     data.hash = hash;
+  }
+
+  if (typeof body.classId === "string") {
+    const classId = cleanText(body.classId, 40);
+    if (classId) {
+      const cls = await db.schoolClass.findUnique({
+        where: { id: classId },
+        select: { active: true },
+      });
+      if (!cls) return jsonError("کلاس پیدا نشد.", 404);
+      if (!cls.active) return jsonError("این کلاس غیرفعال است.", 400);
+    }
+    data.classId = classId || null;
   }
 
   if (typeof body.parentUsername === "string") {

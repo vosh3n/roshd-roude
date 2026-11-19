@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useRoshd, api } from "@/store/roshd";
 
@@ -38,6 +38,16 @@ export default function AuthScreen() {
   const [regPass, setRegPass] = useState("");
   const [regError, setRegError] = useState("");
   const [regBusy, setRegBusy] = useState(false);
+  const [regClass, setRegClass] = useState("");
+  /* کلاس‌های فعال از API خوانده می‌شوند تا دانش‌آموز هنگام ثبت‌نام انتخاب کند */
+  const [classes, setClasses] = useState<{ id: string; name: string; year: string }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/classes")
+      .then((r) => r.json())
+      .then((d) => setClasses(d.classes || []))
+      .catch(() => {});
+  }, []);
 
   /* ---------- بازیابی رمز ---------- */
   const [mode, setMode] = useState<"auth" | "recover">("auth");
@@ -80,6 +90,7 @@ export default function AuthScreen() {
           username: regUser.trim(),
           email: regEmail.trim(),
           password: regPass,
+          classId: regClass,
         }),
       });
       bindServerUser(d.user);
@@ -399,6 +410,24 @@ export default function AuthScreen() {
               />
               <small className="note" style={{ display: "block", marginTop: "0.375rem" }}>
                 اگر رمزت را فراموش کنی، با همین ایمیل می‌توانی بازیابیش کنی.
+              </small>
+            </div>
+            <div className="field-group">
+              <label htmlFor="regClass">کلاس (اختیاری)</label>
+              <select
+                id="regClass"
+                value={regClass}
+                onChange={(e) => setRegClass(e.target.value)}
+              >
+                <option value="">— بدون کلاس —</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}{c.year ? ` — ${c.year}` : ""}
+                  </option>
+                ))}
+              </select>
+              <small className="note" style={{ display: "block", marginTop: "0.375rem" }}>
+                اگر از قبل در کلاسی هستی و کلاس را نمی‌دانی، خالی بگذار؛ مدیر مدرسه بعداً وصلت می‌کند.
               </small>
             </div>
             <div className="field-group">

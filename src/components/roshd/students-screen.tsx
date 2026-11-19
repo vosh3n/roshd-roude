@@ -12,9 +12,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, useRoshd } from "@/store/roshd";
 import { LEVELS } from "@/lib/missions-data";
 import { fmtDeadline, toFa } from "@/lib/jalali";
-import { GraduationCap, Loader2, Save, Search, Trash2, UserRound } from "lucide-react";
+import {
+  GraduationCap,
+  Layers,
+  Loader2,
+  Save,
+  Search,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 import EmptyState from "./empty-state";
 import RepsAdmin from "./reps-admin";
+import ClassesAdmin from "./classes-admin";
 
 interface StudentRow {
   username: string;
@@ -24,6 +33,8 @@ interface StudentRow {
   level: string;
   parentUsername: string;
   parentName: string;
+  classId: string;
+  className: string;
   approved: number;
   pending: number;
   tasks: number;
@@ -48,7 +59,8 @@ export default function StudentsScreen() {
   const [parents, setParents] = useState<ParentRow[]>([]);
     const [q, setQ] = useState("");
 
-  const [tab, setTab] = useState<"students" | "reps">("students");
+  const [tab, setTab] = useState<"students" | "reps" | "classes">("students");
+  const [classes, setClasses] = useState<{ id: string; name: string; active: boolean }[]>([]);
 
   const [busy, setBusy] = useState<string | null>(null);
   const [passwords, setPasswords] = useState<Record<string, string>>({});
@@ -56,9 +68,13 @@ export default function StudentsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const d = await api("/api/admin/students");
+      const [d, cls] = await Promise.all([
+        api("/api/admin/students"),
+        api("/api/admin/classes").catch(() => ({ classes: [] })),
+      ]);
       setRows(d.students || []);
       setParents(d.parents || []);
+      setClasses(cls.classes || []);
     } catch (e) {
       pushToast((e as Error).message);
       setRows([]);
@@ -115,6 +131,11 @@ export default function StudentsScreen() {
       setPasswords((p) => ({ ...p, [r.username]: "" }));
       pushToast(`رمز «${r.name}» عوض شد.`);
     }
+  };
+
+  const moveClass = async (r: StudentRow, classId: string) => {
+    if (await patch(r.username, { classId }))
+      pushToast(classId ? "دانش‌آموز به کلاس منتقل شد." : "دانش‌آموز «بدون کلاس» شد.");
   };
 
   const linkParent = async (r: StudentRow, parentUsername: string) => {
@@ -174,6 +195,15 @@ export default function StudentsScreen() {
         <button
           type="button"
           role="tab"
+          aria-selected={tab === "classes"}
+          className={"parent-tab" + (tab === "classes" ? " active" : "")}
+          onClick={() => setTab("classes")}
+        >
+          <Layers size={16} /> کلاس‌ها
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={tab === "reps"}
           className={"parent-tab" + (tab === "reps" ? " active" : "")}
           onClick={() => setTab("reps")}
@@ -182,7 +212,9 @@ export default function StudentsScreen() {
         </button>
       </div>
 
-      {tab === "reps" ? <RepsAdmin /> : <>
+      {tab === "classes" ? <ClassesAdmin /> : null}
+      {tab === "reps" ? <RepsAdmin /> : null}
+      {tab === "students" ? <>
       <label className="sa-search">
         <Search size={16} />
         <input
@@ -225,6 +257,9 @@ export default function StudentsScreen() {
                   <span className="sa-chip">
                     {LEVELS[r.level] || "بدون سطح"}
                   </span>
+                  <span className="sa-chip class">
+                    {r.className || "بدون کلاس"}
+                  </span>
                 </div>
               </header>
 
@@ -244,6 +279,23 @@ export default function StudentsScreen() {
               </div>
 
               <div className="sa-student-actions">
+                <label className="sa-mini">
+                  <span>کلاس</span>
+                  <select
+                    value={r.classId}
+                    disabled={busy === r.username}
+                    onChange={(e) => moveClass(r, e.target.value)}
+                    aria-label={`کلاس ${r.name}`}
+                  >
+                    <option value="">— بدون کلاس —</option>
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}{c.active ? "" : " (غیرفعال)"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 <label className="sa-mini">
                   <span>والد</span>
                   <select
@@ -329,8 +381,7 @@ export default function StudentsScreen() {
           ))}
         </div>
       )}
-      </>
-      }
+      </> : null}
     </div>
   );
 }

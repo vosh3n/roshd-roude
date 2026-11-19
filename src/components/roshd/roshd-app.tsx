@@ -28,6 +28,8 @@ import SuperAdminHome from "./superadmin-home";
 import TeacherPanelScreen from "./teacher-panel-screen";
 import StudentsScreen from "./students-screen";
 import RepTasksScreen from "./rep-tasks-screen";
+import ShowcaseScreen from "./showcase-screen";
+import StudentGuide from "./student-guide";
 import SideDrawer, { DrawerToggle } from "./side-drawer";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import AvatarModal from "./avatar-modal";
@@ -143,6 +145,7 @@ const SCREENS: Record<
   teacher: { id: "teacherPanelScreen", Comp: TeacherPanelScreen },
   students: { id: "studentsScreen", Comp: StudentsScreen },
   repTasks: { id: "repTasksScreen", Comp: RepTasksScreen },
+  showcase: { id: "showcaseScreen", Comp: ShowcaseScreen },
 };
 
 /** اعلان تکی: ورود فنری + خروج نرم — چرخهٔ عمر خودش را مدیریت می‌کند
@@ -243,6 +246,7 @@ export default function RoshdApp() {
       <FieldTheme />
       <SessionLoader />
       <canvas id="confetti-canvas" aria-hidden="true" />
+      <StudentGuide />
       <OnboardingQuiz />
 
       {screen === "landing" ? null : (

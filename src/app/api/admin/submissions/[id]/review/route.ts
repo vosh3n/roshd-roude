@@ -6,7 +6,9 @@ import {
   jsonError,
   errDetail,
   canManageAssignments,
+  isEducationalRep,
 } from "@/lib/auth";
+import { classOfRep } from "@/lib/classes";
 import { cleanMultiline, cleanText } from "@/lib/sanitize";
 
 /**
@@ -26,7 +28,8 @@ export async function POST(
   try {
     const user = await currentUser();
     if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-    if (!canManageAssignments(await roleOf(user.username)))
+    const role = await roleOf(user.username);
+    if (!canManageAssignments(role))
       return jsonError("دسترسی بررسی ارسال نداری.", 403);
 
     const { id } = await params;
@@ -42,6 +45,17 @@ export async function POST(
 
     const row = await db.submission.findUnique({ where: { id } });
     if (!row) return jsonError("ارسال پیدا نشد.", 404);
+
+    /* نماینده فقط ارسال‌های کلاس خودش را بررسی می‌کند */
+    if (isEducationalRep(role)) {
+      const myClass = await classOfRep(user.username);
+      const assignment = await db.assignment.findUnique({
+        where: { id: row.assignmentId },
+        select: { classId: true },
+      });
+      if (!myClass || assignment?.classId !== myClass)
+        return jsonError("این ارسال مربوط به کلاس تو نیست.", 403);
+    }
 
     const updated = await db.submission.update({
       where: { id },

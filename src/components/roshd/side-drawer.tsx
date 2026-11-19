@@ -13,6 +13,7 @@ import {
   PlayCircle,
   Settings,
   ShieldCheck,
+  Sparkles,
   Trophy,
   Users,
   X,
@@ -37,6 +38,12 @@ const NAV: {
     target: "dashboard",
     label: "داشبورد",
     Icon: LayoutDashboard,
+    roles: ["student"],
+  },
+  {
+    target: "showcase",
+    label: "نمایشگاه کارهای من",
+    Icon: Sparkles,
     roles: ["student"],
   },
   {
@@ -79,9 +86,15 @@ const NAV: {
   },
   {
     target: "students",
-    label: "دانش‌آموزان",
+    label: "دانش‌آموزان و کلاس‌ها",
     Icon: GraduationCap,
     roles: ["superadmin"],
+  },
+  {
+    target: "showcase",
+    label: "نمایشگاه دانش‌آموزان",
+    Icon: Sparkles,
+    roles: ["admin", "superadmin"],
   },
   /* نمایندهٔ آموزشی فقط یک بخش دارد: تکالیف */
   {
@@ -140,6 +153,7 @@ export default function SideDrawer({ open }: { open: boolean }) {
   const logout = useRoshd((s) => s.logout);
   const screen = useRoshd((s) => s.screen);
   const unread = useRoshd((s) => s.announcementUnread);
+  const reportUnread = useRoshd((s) => s.reportUnread);
 
   const close = () => setDrawerOpen(false);
 
@@ -233,6 +247,15 @@ export default function SideDrawer({ open }: { open: boolean }) {
               {target === "parent" && unread > 0 ? (
                 <span className="drawer-badge" aria-label={`${unread} اطلاعیهٔ خوانده‌نشده`}>
                   {unread > 9 ? "۹+" : unread.toLocaleString("fa-IR")}
+                </span>
+              ) : null}
+              {target === "parent" && reportUnread > 0 ? (
+                <span
+                  className="drawer-badge new"
+                  aria-label={`${reportUnread} گزارش هفتگی تازه`}
+                  title="گزارش هفتگی تازه"
+                >
+                  گزارش جدید
                 </span>
               ) : null}
             </button>

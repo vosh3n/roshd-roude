@@ -1,11 +1,12 @@
 /**
- * ارسال ایمیل با nodemailer — فقط برای بازیابی رمز عبور
+ * ارسال ایمیل با nodemailer — بازیابی رمز و گزارش هفتگی
  *
  * تنظیمات از .env:
  *   SMTP_HOST, SMTP_PORT, SMTP_SECURE (اختیاری), SMTP_USER, SMTP_PASS, SMTP_FROM
  *
  * اگر SMTP تنظیم نشده باشد، hasSmtp()=false و روت forgot کد را
  * در حالت آزمایشی به خود صفحه برمی‌گرداند (تا پروژه بدون سرویس ایمیل هم کار کند).
+ * هیچ مقداری از .env چاپ یا به کلاینت فرستاده نمی‌شود.
  */
 
 const SMTP_HOST = process.env.SMTP_HOST || "";
@@ -25,20 +26,29 @@ export function smtpFrom(): string {
   return SMTP_FROM || SMTP_USER;
 }
 
+/** آیا SMTP برای ارسال گزارش هفتگی کامل است؟ */
+export function smtpConfigured(): boolean {
+  return !!(SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS);
+}
+
+function createTransport() {
+  return import("nodemailer").then((nodemailer) =>
+    nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_SECURE,
+      auth: { user: SMTP_USER, pass: SMTP_PASS },
+    })
+  );
+}
+
 /** ارسال ایمیل کد بازیابی — در صورت نبود تنظیمات، خطای «no-smtp» می‌دهد */
 export async function sendResetCodeEmail(
   to: string,
   code: string
 ): Promise<void> {
   if (!hasSmtp()) throw new Error("no-smtp");
-
-  const nodemailer = await import("nodemailer");
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_SECURE,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
+  const transporter = await createTransport();
 
   await transporter.sendMail({
     from: smtpFrom(),
@@ -56,5 +66,21 @@ export async function sendResetCodeEmail(
       `<p>این کد تا ۱۵ دقیقه اعتبار دارد.</p>` +
       `<p style="color:#888">اگر تو این درخواست را ندادی، این ایمیل را نادیده بگیر.</p>` +
       `</div>`,
+  });
+}
+
+/** ارسال ایمیل عمومی (گزارش هفتگی) — فقط با SMTP کامل */
+export async function sendMail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+}) {
+  if (!smtpConfigured()) throw new Error("smtp-not-configured");
+  const transporter = await createTransport();
+  await transporter.sendMail({
+    from: smtpFrom(),
+    to: opts.to,
+    subject: opts.subject,
+    text: opts.text,
   });
 }

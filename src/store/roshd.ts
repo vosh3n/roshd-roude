@@ -88,7 +88,9 @@ export type Screen =
   /* مدیریت حساب و وضعیت دانش‌آموزان */
   | "students"
   /* پنل نمایندهٔ آموزشی — فقط تکالیف */
-  | "repTasks";
+  | "repTasks"
+  /* نمایشگاه کارهای من (دانش‌آموز) و نمایشگاه دانش‌آموزان (معلم/مدیر سایت) */
+  | "showcase";
 
 /**
  * صفحه‌های مخصوص مسیر دانش‌آموز (انتخاب رشته/سطح، آزمون، داشبورد، تکالیف،
@@ -131,6 +133,13 @@ export interface ServerUser {
   role: "admin" | "student" | "parent" | "superadmin" | "educational_rep";
   /** آدرس عکس پروفایل (خالی = بدون عکس) */
   avatar?: string;
+  /** راهنمای شروع دانش‌آموز دیده شده؟ (از دیتابیس) */
+  guideSeen?: boolean;
+  /** کلاس دانش‌آموز یا کلاس مسئولیت نماینده */
+  classId?: string;
+  className?: string;
+  /** تعداد گزارش‌های هفتگی دیده‌نشده (فقط والد) */
+  reportUnread?: number;
 }
 
 interface ToastMsg {
@@ -259,6 +268,13 @@ interface RoshdState {
   /** تعداد اطلاعیه‌های خوانده‌نشده — نشان روی منوی اولیا */
   announcementUnread: number;
   setAnnouncementUnread: (n: number) => void;
+  /** تعداد گزارش‌های هفتگی دیده‌نشده — نشان «گزارش جدید» */
+  reportUnread: number;
+  setReportUnread: (n: number) => void;
+  /** ذخیرهٔ دیده‌شدن راهنمای شروع روی کاربر در دیتابیس */
+  markGuideSeen: () => Promise<void>;
+  /** «دیدن دوبارهٔ راهنما» — دوباره نمایش داده می‌شود */
+  replayGuide: () => Promise<void>;
   /** کلید ماموریتی که پنجرهٔ کارش باز است */
   missionModalKey: string | null;
   missionBusy: boolean;
@@ -299,7 +315,31 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   missions: {},
   missionsLoaded: false,
   announcementUnread: 0,
+  reportUnread: 0,
+  setReportUnread: (n) => set({ reportUnread: Math.max(0, n | 0) }),
   setAnnouncementUnread: (n) => set({ announcementUnread: Math.max(0, n | 0) }),
+
+  markGuideSeen: async () => {
+    const su = get().serverUser;
+    if (su) set({ serverUser: { ...su, guideSeen: true } });
+    try {
+      await api("/api/auth/guide", { method: "POST" });
+    } catch {
+      /* شبکه قطع بود؛ دفعهٔ بعد دوباره تلاش می‌شود */
+    }
+  },
+
+  replayGuide: async () => {
+    const su = get().serverUser;
+    if (su) set({ serverUser: { ...su, guideSeen: false } });
+    try {
+      await api("/api/auth/guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seen: false }),
+      });
+    } catch {}
+  },
   missionModalKey: null,
   missionBusy: false,
 
@@ -427,7 +467,11 @@ export const useRoshd = create<RoshdState>((set, get) => ({
     d.users[u.username].avatar = u.avatar || "";
     d.currentUser = u.username;
     saveAppData(d);
-    set({ serverUser: u, appData: d });
+    set({
+      serverUser: u,
+      appData: d,
+      reportUnread: Math.max(0, u.reportUnread || 0),
+    });
     // یک‌بار sync اولیهٔ پیشرفت دانش‌آموز (اگر داده‌ای دارد)
     if (u.role === "student") pushProgress();
   },

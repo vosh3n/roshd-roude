@@ -8,8 +8,10 @@ import {
   jsonError,
   errDetail,
   canManageAssignments,
+  isEducationalRep,
   UPLOAD_DIR,
 } from "@/lib/auth";
+import { classOfRep } from "@/lib/classes";
 import { cleanMultiline, cleanText } from "@/lib/sanitize";
 
 /**
@@ -24,7 +26,16 @@ async function guard() {
   const role = await roleOf(user.username);
   if (!canManageAssignments(role))
     return { error: jsonError("دسترسی مدیریت تکالیف نداری.", 403) };
-  return { user };
+  return { user, role };
+}
+
+/** نماینده فقط به تکالیف کلاس خودش دست می‌زند */
+async function repGuard(role: string, username: string, classId: string | null) {
+  if (!isEducationalRep(role)) return null;
+  const myClass = await classOfRep(username);
+  if (!myClass || classId !== myClass)
+    return jsonError("این تکلیف مربوط به کلاس تو نیست.", 403);
+  return null;
 }
 
 export async function PATCH(
@@ -37,6 +48,9 @@ export async function PATCH(
   const { id } = await params;
   const existing = await db.assignment.findUnique({ where: { id } });
   if (!existing) return jsonError("تکلیف پیدا نشد.", 404);
+
+  const denied = await repGuard(g.role, g.user.username, existing.classId);
+  if (denied) return denied;
 
   const body = await req.json().catch(() => ({}));
   const data: Record<string, unknown> = {};
@@ -58,6 +72,19 @@ export async function PATCH(
     const d = new Date(body.deadline);
     if (Number.isNaN(d.getTime())) return jsonError("مهلت معتبر نیست.", 400);
     data.deadline = d;
+  }
+  /* تغییر کلاس فقط برای معلم و مدیر سایت؛ نماینده اجازهٔ جابه‌جایی ندارد */
+  if (typeof body.classId === "string" && !isEducationalRep(g.role)) {
+    const classId = cleanText(body.classId, 40);
+    if (classId) {
+      const cls = await db.schoolClass.findUnique({
+        where: { id: classId },
+        select: { active: true },
+      });
+      if (!cls) return jsonError("کلاس پیدا نشد.", 404);
+      if (!cls.active) return jsonError("این کلاس غیرفعال است.", 400);
+    }
+    data.classId = classId || null;
   }
 
   if (!Object.keys(data).length) return jsonError("تغییری ارسال نشده.", 400);
@@ -83,6 +110,9 @@ export async function DELETE(
     include: { submissions: true },
   });
   if (!existing) return jsonError("تکلیف پیدا نشد.", 404);
+
+  const denied = await repGuard(g.role, g.user.username, existing.classId);
+  if (denied) return denied;
 
   try {
     // فایل‌های ارسال‌شده روی دیسک هم پاک شوند (فقط داخل پوشهٔ آپلود)

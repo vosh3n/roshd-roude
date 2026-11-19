@@ -4,8 +4,8 @@
  * صفحه تنظیمات — گالری ۱۷ پوسته با پیش‌نمایش زنده + تنظیمات نمایش
  */
 
-import { useMemo, useState } from "react";
-import { useRoshd } from "@/store/roshd";
+import { useEffect, useMemo, useState } from "react";
+import { api, useRoshd } from "@/store/roshd";
 import {
   THEMES,
   THEME_CATEGORIES,
@@ -110,11 +110,48 @@ export default function SettingsScreen() {
   const logout = useRoshd((s) => s.logout);
   const setScreen = useRoshd((s) => s.setScreen);
   const saveEmail = useRoshd((s) => s.saveEmail);
+  const replayGuide = useRoshd((s) => s.replayGuide);
 
   const [filter, setFilter] = useState<ThemeCategory | "all">("all");
   const [emailInput, setEmailInput] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
+  /* قابلیت ایمیل فقط اگر SMTP در .env تنظیم شده باشد نمایش داده می‌شود */
+  const [smtp, setSmtp] = useState(false);
+  const [kids, setKids] = useState<{ username: string; name: string }[]>([]);
+  const [kid, setKid] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
   const u = curUser();
+
+  useEffect(() => {
+    if (serverUser?.role !== "parent") return;
+    api("/api/config/features")
+      .then((d) => setSmtp(!!d.smtp))
+      .catch(() => setSmtp(false));
+    api("/api/parent/overview")
+      .then((d) => {
+        const list = d.students || [];
+        setKids(list);
+        setKid(list[0]?.username || "");
+      })
+      .catch(() => {});
+  }, [serverUser?.role]);
+
+  const sendReport = async () => {
+    if (!kid) return;
+    setReportBusy(true);
+    try {
+      await api("/api/parent/reports/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ child: kid }),
+      });
+      pushToast("گزارش هفتگی به ایمیلت فرستاده شد.");
+    } catch (e) {
+      pushToast((e as Error).message);
+    } finally {
+      setReportBusy(false);
+    }
+  };
 
   const filtered = useMemo(
     () => (filter === "all" ? THEMES : THEMES.filter((t) => t.category === filter)),
@@ -372,6 +409,62 @@ export default function SettingsScreen() {
               </button>
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {/* راهنمای شروع — فقط دانش‌آموز */}
+      {serverUser?.role === "student" ? (
+        <div className="card settings-section">
+          <h2 className="section-title">
+            <UserRound size={18} />
+            راهنمای شروع
+          </h2>
+          <p className="settings-desc">
+            سه صفحهٔ کوتاه دربارهٔ ماموریت‌های روزانه، ارسال کار و نمایشگاه. هر وقت
+            خواستی می‌توانی دوباره ببینی‌شان.
+          </p>
+          <button
+            className="btn secondary"
+            onClick={async () => {
+              await replayGuide();
+              pushToast("راهنما دوباره باز شد.");
+            }}
+          >
+            دیدن دوبارهٔ راهنما
+          </button>
+        </div>
+      ) : null}
+
+      {/* ارسال گزارش هفتگی با ایمیل — فقط اگر SMTP تنظیم شده باشد */}
+      {serverUser?.role === "parent" && smtp ? (
+        <div className="card settings-section">
+          <h2 className="section-title">
+            <Mail size={18} />
+            گزارش هفتگی با ایمیل
+          </h2>
+          <p className="settings-desc">
+            گزارش هفتهٔ جاری فرزندت را به ایمیل ثبت‌شده در حسابت بفرست.
+          </p>
+          {kids.length ? (
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <select
+                value={kid}
+                onChange={(e) => setKid(e.target.value)}
+                aria-label="انتخاب فرزند برای ارسال گزارش"
+              >
+                {kids.map((k) => (
+                  <option key={k.username} value={k.username}>
+                    {k.name}
+                  </option>
+                ))}
+              </select>
+              <button className="btn secondary" onClick={sendReport} disabled={reportBusy}>
+                {reportBusy ? "در حال ارسال…" : "ارسال گزارش به ایمیل"}
+              </button>
+            </div>
+          ) : (
+            <p className="note">هنوز فرزندی به حسابت وصل نشده است.</p>
+          )}
         </div>
       ) : null}
 

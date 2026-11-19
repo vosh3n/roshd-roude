@@ -15,10 +15,15 @@ model User {
   salt       String
   hash       String
   role       String    @default("student") // "student" | "admin" | "parent" | "superadmin" | "educational_rep"
-  /** کلاس نمایندهٔ آموزشی — فقط برای نقش educational_rep استفاده می‌شود */
-  classRoom  String    @default("")
   /** حساب غیرفعال نمی‌تواند وارد شود (برای نماینده‌ها از پنل مدیر سایت) */
   active     Boolean   @default(true)
+  /** کلاس دانش‌آموز یا کلاس مسئولیت نماینده (خالی = بدون کلاس) */
+  classId    String?
+  clazz      SchoolClass? @relation("ClassStudents", fields: [classId], references: [id], onDelete: SetNull)
+  /** راهنمای سه‌مرحله‌ای دانش‌آموز دیده شده؟ (در دیتابیس ذخیره می‌شود) */
+  guideSeen  Boolean   @default(false)
+  /** دادهٔ تست — با npm run seed:test:remove پاک می‌شود */
+  isTest     Boolean   @default(false)
   /** نام کاربری والد این دانش‌آموز — اتصال والد به فرزند (خالی = بدون والد) */
   parentUsername String @default("")
   avatar     String    @default("") // نام فایل عکس پروفایل در db/uploads/avatars
@@ -32,6 +37,20 @@ model PasswordReset {
   username  String   @id
   codeHash  String // sha256(code)
   expiresAt DateTime
+}
+
+/** کلاس مدرسه — هر دانش‌آموز در یک کلاس و هر کلاس یک نمایندهٔ آموزشی */
+model SchoolClass {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  year        String       @default("")
+  active      Boolean      @default(true)
+  /** نام کاربری نمایندهٔ مسئول این کلاس (خالی = بدون نماینده) */
+  repUsername String       @default("")
+  createdAt   DateTime     @default(now())
+  isTest      Boolean      @default(false)
+  students    User[]       @relation("ClassStudents")
+  assignments Assignment[]
 }
 
 model Progress {
@@ -73,6 +92,7 @@ model MissionSubmission {
   fileType    String    @default("")
   status      String    @default("pending") // pending | approved | revision
   teacherNote String    @default("")
+  isTest      Boolean   @default(false)
   reviewedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -167,6 +187,10 @@ model Assignment {
   deadline    DateTime
   /** کلاس یا رشته/سطح مربوط — متن آزاد، خالی یعنی برای همه */
   audience    String       @default("")
+  /** کلاس مربوط — خالی یعنی همهٔ کلاس‌ها (تکالیف قدیمی) */
+  classId     String?
+  class       SchoolClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  isTest      Boolean      @default(false)
   createdAt   DateTime     @default(now())
   submissions Submission[]
 }
@@ -188,5 +212,43 @@ model Submission {
   /** نمرهٔ اختیاری (متن آزاد مثل «۱۸» یا «۱۸ از ۲۰») */
   grade        String     @default("")
   reviewedAt   DateTime?
+  isTest       Boolean    @default(false)
   at           DateTime   @default(now())
+}
+
+/** کار تاییدشدهٔ انتخاب‌شده برای نمایشگاه — بدون کپی فایل، فقط ارجاع */
+model ShowcaseItem {
+  id          String   @id @default(cuid())
+  username    String
+  /** mission = ارسال ماموریت، task = ارسال تکلیف */
+  sourceType  String
+  sourceId    String
+  title       String   @default("")
+  description String   @default("")
+  pinned      Boolean  @default(false)
+  hidden      Boolean  @default(false)
+  isTest      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([username, sourceType, sourceId])
+  @@index([username])
+}
+
+/** گزارش هفتگی اولیا — محاسبه‌شده از داده، ذخیره‌شده برای تاریخچه و «گزارش جدید» */
+model WeeklyReport {
+  id         String    @id @default(cuid())
+  username   String
+  /** کلید روز شنبهٔ همان هفته (YYYY-MM-DD میلادی، مطابق dayKey) */
+  weekStart  String
+  dataJson   String    @default("{}")
+  summary    String    @default("")
+  /** وقتی والد گزارش را دید پر می‌شود — نشان «گزارش جدید» */
+  seenAt     DateTime?
+  isTest     Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([username, weekStart])
+  @@index([username])
 }

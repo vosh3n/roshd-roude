@@ -34,10 +34,14 @@ export default function OnboardingQuiz() {
   const setTheme = useRoshd((s) => s.setTheme);
   const setFontScale = useRoshd((s) => s.setFontScale);
   const pushToast = useRoshd((s) => s.pushToast);
+  /* ترتیب درست: بعد از ثبت‌نام اول راهنمای سه‌مرحله‌ای، بعد پرسش‌نامهٔ پوسته */
+  const guidePending = useRoshd(
+    (s) => s.serverUser?.role === "student" && s.serverUser.guideSeen === false
+  );
 
   const [step, setStep] = useState(0);
   const primaryRef = useRef<HTMLButtonElement>(null);
-  const open = hydrated && !onboardingDone;
+  const open = hydrated && !onboardingDone && !guidePending;
 
   const finish = (greet: boolean) => {
     completeOnboarding();

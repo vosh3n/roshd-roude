@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
     const username = String(body.username || "").trim();
     const password = String(body.password || "");
     const email = String(body.email || "").trim().toLowerCase();
+    const classId = String(body.classId || "").trim();
 
     if (!name || !username || !password)
       return jsonError("همه فیلدها را پر کن.");
@@ -31,9 +32,27 @@ export async function POST(req: NextRequest) {
         return jsonError("این ایمیل قبلاً برای حساب دیگری ثبت شده.", 409);
     }
 
+    /* کلاس اختیاری هنگام ثبت‌نام — فقط از کلاس‌های فعال */
+    let classIdToSet: string | null = null;
+    if (classId) {
+      const cls = await db.schoolClass.findFirst({
+        where: { id: classId, active: true },
+        select: { id: true },
+      });
+      if (!cls) return jsonError("کلاس انتخاب‌شده معتبر نیست.", 400);
+      classIdToSet = cls.id;
+    }
+
     const { salt, hash } = hashPass(password);
     await db.user.create({
-      data: { username, name, email: email || null, salt, hash },
+      data: {
+        username,
+        name,
+        email: email || null,
+        salt,
+        hash,
+        classId: classIdToSet,
+      },
     });
 
     const sid = await createSession(username);
@@ -47,6 +66,9 @@ export async function POST(req: NextRequest) {
         email: email || "",
         role: "student",
         avatar: "",
+        guideSeen: false,
+        classId: classIdToSet || "",
+        reportUnread: 0,
       },
     });
     res.headers.append(

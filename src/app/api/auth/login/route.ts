@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
         email: u.email || "",
         role,
         avatar: avatarUrl(u.username, u.avatar),
+        guideSeen: u.guideSeen !== false,
+        classId: u.classId || "",
+        reportUnread: 0,
       },
     });
     res.headers.append(
