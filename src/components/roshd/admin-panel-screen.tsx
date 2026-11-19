@@ -96,12 +96,13 @@ export default function AdminPanelScreen() {
   const pushToast = useRoshd((s) => s.pushToast);
   const isSuper = serverUser?.role === "superadmin";
 
+  /* مدیر سایت، محتوای پنل اولیا را مدیریت می‌کند؛ صندوق پیام‌ها در
+     «پنل معلم» است. معلم همان اطلاعیه‌ها و پیام‌های خودش را دارد. */
   const tabs: { id: Tab; label: string; Icon: typeof Images }[] = isSuper
     ? [
         { id: "gallery", label: "مدیریت گالری", Icon: Images },
         { id: "news", label: "اطلاعیه‌ها", Icon: Megaphone },
         { id: "calendar", label: "تقویم مدرسه", Icon: CalendarDays },
-        { id: "messages", label: "صندوق پیام‌ها", Icon: MessageCircle },
         { id: "families", label: "اتصال اولیا", Icon: Users },
       ]
     : [
@@ -115,11 +116,11 @@ export default function AdminPanelScreen() {
     <div className="admin-wrap calm-admin" dir="rtl">
       <div className="page-head">
         <h2 className="section-title">
-          {isSuper ? "مدیریت سایت" : "اطلاعیه‌ها و پیام‌ها"}
+          {isSuper ? "پنل اولیا" : "اطلاعیه‌ها و پیام‌ها"}
         </h2>
         <p className="note">
           {isSuper
-            ? "گالری، اطلاعیه‌ها، تقویم و پیام‌های اولیا — همه از یک‌جا."
+            ? "گالری مدرسه، اطلاعیه‌ها، تقویم و اتصال اولیا به فرزند — همان چیزی که اولیا می‌بینند."
             : "اطلاعیه‌های مدرسه و پیام‌های اولیا را از همین‌جا مدیریت کن."}
         </p>
       </div>
@@ -542,7 +543,7 @@ function GalleryAdmin({ pushToast }: { pushToast: Toast }) {
 
 /* ---------------- اطلاعیه‌ها ---------------- */
 
-function NewsAdmin({ pushToast }: { pushToast: Toast }) {
+export function NewsAdmin({ pushToast }: { pushToast: Toast }) {
   const [rows, setRows] = useState<NewsRow[] | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -920,7 +921,7 @@ function CalendarAdmin({ pushToast }: { pushToast: Toast }) {
 
 /* ---------------- صندوق پیام‌ها ---------------- */
 
-function Inbox({ pushToast }: { pushToast: Toast }) {
+export function Inbox({ pushToast }: { pushToast: Toast }) {
   const [rows, setRows] = useState<InboxRow[] | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);

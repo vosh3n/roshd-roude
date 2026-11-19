@@ -32,7 +32,8 @@ export default function TasksScreen() {
   const serverUser = useRoshd((s) => s.serverUser);
   const pushToast = useRoshd((s) => s.pushToast);
   const bindServerUser = useRoshd((s) => s.bindServerUser);
-  const isAdmin = serverUser?.role === "admin";
+  const isAdmin =
+    serverUser?.role === "admin" || serverUser?.role === "superadmin";
 
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
   const [role, setRole] = useState<string>(serverUser?.role || "student");
@@ -183,7 +184,8 @@ export default function TasksScreen() {
     }
   };
 
-  const adminMode = isAdmin && role === "admin";
+  // معلم و مدیر سایت هر دو ابزار ساخت تکلیف را دارند
+  const adminMode = isAdmin && (role === "admin" || role === "superadmin");
 
   return (
     <>

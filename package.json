@@ -14,6 +14,7 @@
     "db:reset": "prisma migrate reset",
     "user": "node scripts/manage-user.mjs",
     "seed:superadmin": "node scripts/seed-superadmin.mjs",
+    "seed:teacher": "node scripts/seed-teacher.mjs",
     "emoji:sync": "node scripts/emoji-sync.mjs"
   },
   "dependencies": {

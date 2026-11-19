@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRoshd, api, fireConfetti } from "@/store/roshd";
+import { useRoshd, api, fireConfetti, STUDENT_SCREENS } from "@/store/roshd";
 import { getTheme } from "@/lib/themes";
 import LandingScreen from "./landing-screen";
 import AuthScreen from "./auth-screen";
@@ -18,6 +18,9 @@ import RankingScreen from "./ranking-screen";
 import UserAvatar from "./user-avatar";
 import ParentScreen from "./parent-screen";
 import AdminPanelScreen from "./admin-panel-screen";
+import SuperAdminHome from "./superadmin-home";
+import TeacherPanelScreen from "./teacher-panel-screen";
+import StudentsScreen from "./students-screen";
 import SideDrawer, { DrawerToggle } from "./side-drawer";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import AvatarModal from "./avatar-modal";
@@ -129,6 +132,9 @@ const SCREENS: Record<
   settings: { id: "settingsScreen", Comp: SettingsScreen },
   parent: { id: "parentScreen", Comp: ParentScreen },
   admin: { id: "adminScreen", Comp: AdminPanelScreen },
+  adminHome: { id: "adminHomeScreen", Comp: SuperAdminHome },
+  teacher: { id: "teacherPanelScreen", Comp: TeacherPanelScreen },
+  students: { id: "studentsScreen", Comp: StudentsScreen },
 };
 
 /** اعلان تکی: ورود فنری + خروج نرم — چرخهٔ عمر خودش را مدیریت می‌کند
@@ -162,6 +168,8 @@ export default function RoshdApp() {
   const appData = useRoshd((s) => s.appData);
   const curUser = useRoshd((s) => s.curUser);
   const goBack = useRoshd((s) => s.goBack);
+  const history = useRoshd((s) => s.history);
+  const setScreen = useRoshd((s) => s.setScreen);
   const drawerOpen = useRoshd((s) => s.drawerOpen);
   const toasts = useRoshd((s) => s.toasts);
 
@@ -171,19 +179,36 @@ export default function RoshdApp() {
     screen !== "auth" &&
     !!(serverUser && appData.users[serverUser.username]);
 
-  /* صفحهٔ «خانه» هر نقش — دکمهٔ بازگشت فقط وقتی معنا دارد نمایش داده
-     می‌شود که کاربر در صفحهٔ خانه نباشد (یک پله بالاتر وجود داشته باشد) */
-  const homeScreen =
-    serverUser?.role === "parent"
-      ? "parent"
-      : serverUser?.role === "superadmin"
-        ? "admin"
-        : serverUser?.role === "admin"
-          ? "submissions"
-          : "dashboard";
-  const canGoBack = screen !== "landing" && screen !== homeScreen;
-  /* دکمهٔ بازگشت همیشه یک‌جای ثابت: گوشهٔ آغازین نوار بالا (کنار تیتر)
-     با اندازهٔ ۴۴px و فاصلهٔ یکسان؛ در صفحه‌های خانه نمایش داده نمی‌شود. */
+  /* دکمهٔ بازگشت فقط وقتی نمایش داده می‌شود که واقعاً یک پله در تاریخچه
+     باشد؛ ظاهرش در همهٔ صفحه‌ها یکی است و جای ثابت دارد (کنار تیتر). */
+  const canGoBack = screen !== "landing" && history.length > 0;
+
+  /* مسیرهای دانش‌آموز برای مدیر سایت در سمت کلاینت هم مسدود می‌شوند
+     (مثلاً بعد از رفرش یا تغییر نقش) */
+  const roles = serverUser?.role;
+  useEffect(() => {
+    if (roles !== "superadmin") return;
+    if (screen === "landing" || screen === "auth") return;
+    if (STUDENT_SCREENS.has(screen)) setScreen("adminHome");
+  }, [roles, screen, setScreen]);
+
+  /* دکمهٔ بازگشت مرورگر/گوشی هم همان تاریخچهٔ صفحه‌ها را یک پله عقب می‌برد؛
+     بعد از هر pop یک رکورد تازه می‌گذاریم تا بازگشت‌های بعدی هم داخل برنامه
+     بمانند و کاربر از سایت بیرون نیفتد. */
+  useEffect(() => {
+    const onPop = () => {
+      const st = useRoshd.getState();
+      st.back();
+      const after = useRoshd.getState();
+      if (after.serverUser && after.screen !== "landing") {
+        try {
+          window.history.pushState({ __roshd: true }, "");
+        } catch {}
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -229,7 +254,7 @@ export default function RoshdApp() {
               {serverUser?.role === "admin"
                 ? "پنل معلم — مدیریت تکالیف، ویدیوها و ارسال‌ها"
                 : serverUser?.role === "superadmin"
-                  ? "پنل مدیر سایت — گالری، اطلاعیه‌ها، تقویم و پیام‌ها"
+                  ? "پنل مدیر سایت — پنل اولیا، پنل معلم و دانش‌آموزان"
                   : "هر روز ۴ ماموریت، متناسب با رشته و سطح تو"}
             </div>
           </div>

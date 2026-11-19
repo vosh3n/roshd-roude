@@ -226,6 +226,12 @@ export async function POST(req: NextRequest) {
         "حساب اولیا فقط برای مشاهده است و اجازهٔ آزمون دادن ندارد.",
         403
       );
+    // مسیر آزمون تعیین سطح فقط برای دانش‌آموز است
+    if (String(user.role) === "superadmin")
+      return jsonError(
+        "آزمون تعیین سطح برای مدیر سایت فعال نیست؛ این مسیر مخصوص دانش‌آموزان است.",
+        403
+      );
 
     const store = await cookies();
     const sid = store.get("sid")?.value || user.username;

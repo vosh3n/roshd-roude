@@ -80,7 +80,37 @@ export type Screen =
   | "settings"
   | "ranking"
   | "parent"
-  | "admin";
+  | "admin"
+  /* صفحهٔ خانهٔ مدیر سایت — سه کارت اصلی */
+  | "adminHome"
+  /* پنل معلم، از نگاه مدیر سایت (دسترسی کامل) */
+  | "teacher"
+  /* مدیریت حساب و وضعیت دانش‌آموزان */
+  | "students";
+
+/**
+ * صفحه‌های مخصوص مسیر دانش‌آموز (انتخاب رشته/سطح، آزمون، داشبورد، تکالیف،
+ * ویدیوها، رتبه‌بندی). مدیر سایت هرگز نباید به این‌ها هدایت شود.
+ */
+export const STUDENT_SCREENS: ReadonlySet<Screen> = new Set<Screen>([
+  "field",
+  "level",
+  "dashboard",
+  "cert",
+  "videos",
+  "tasks",
+  "ranking",
+]);
+
+/** صفحهٔ اصلی هر نقش — مقصد دکمهٔ بازگشت وقتی تاریخچه خالی است */
+export function homeScreenFor(
+  role?: ServerUser["role"] | null
+): Screen {
+  if (role === "parent") return "parent";
+  if (role === "superadmin") return "adminHome";
+  if (role === "admin") return "submissions";
+  return "dashboard";
+}
 
 export interface ServerUser {
   username: string;
@@ -161,6 +191,8 @@ interface RoshdState {
   appData: AppData;
   settings: AppSettings;
   screen: Screen;
+  /** تاریخچهٔ صفحه‌ها — دکمهٔ بازگشت دقیقاً یک پله عقب می‌رود */
+  history: Screen[];
   authTab: "login" | "register";
   dashboardTab: string;
   pendingSection: Screen | null;
@@ -174,7 +206,9 @@ interface RoshdState {
   hydrate: () => void;
   completeOnboarding: () => void;
   setScreen: (s: Screen) => void;
-  /** یک پله بالاتر رفتن (دکمهٔ بازگشت هدر) */
+  /** یک پله عقب رفتن با برداشتن آخرین صفحه از تاریخچه */
+  back: () => void;
+  /** دکمهٔ بازگشت هدر — با تاریخچهٔ مرورگر هماهنگ است */
   goBack: () => void;
   setAuthTab: (t: "login" | "register") => void;
   setDashboardTab: (t: string) => void;
@@ -242,6 +276,7 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   appData: { users: {}, currentUser: null },
   settings: DEFAULT_SETTINGS,
   screen: "landing",
+  history: [],
   authTab: "login",
   dashboardTab: "missionsTab",
   pendingSection: null,
@@ -273,24 +308,50 @@ export const useRoshd = create<RoshdState>((set, get) => ({
     set({ onboardingDone: true });
   },
 
-  setScreen: (s) => set({ screen: s }),
+  /* رفتن به صفحهٔ جدید: صفحهٔ فعلی به تاریخچه اضافه می‌شود (به‌جز صفحه‌های
+     ورود/ثبت‌نام که هرگز نباید دوباره نمایش داده شوند). مسیرهای دانش‌آموز
+     برای مدیر سایت مسدود است — هم اینجا و هم در سرور. */
+  setScreen: (s) => {
+    const { screen, serverUser, history } = get();
+    let next = s;
+    if (serverUser?.role === "superadmin" && STUDENT_SCREENS.has(next))
+      next = "adminHome";
+    if (next === screen) return;
+    const fromEntry = screen === "landing" || screen === "auth";
+    const nextHistory = fromEntry ? [] : [...history, screen].slice(-40);
+    set({ screen: next, history: nextHistory });
+    /* هماهنگی با دکمهٔ بازگشت مرورگر/گوشی — هر پله یک رکورد مرورگر */
+    if (typeof window !== "undefined" && !fromEntry) {
+      try {
+        window.history.pushState({ __roshd: true }, "");
+      } catch {}
+    }
+  },
 
-  /* بازگشت همیشه «یک پله بالاتر» است، نه «صفحهٔ قبلی»؛ بنابراین کاربر
-     هیچ‌وقت یک‌راست به صفحهٔ اول سایت پرت نمی‌شود. */
-  goBack: () => {
-    const { screen, serverUser, appData } = get();
+  /* برداشتن آخرین صفحه از تاریخچه (منبعِ حقیقت، نه پشتهٔ مرورگر).
+     صفحه‌های ورود/ثبت‌نام و مسیرهای مسدودشده رد می‌شوند؛ اگر تاریخچه خالی
+     بود، صفحهٔ خانهٔ همان نقش برمی‌گردد. */
+  back: () => {
+    const { serverUser, history } = get();
     const role = serverUser?.role;
-    const home: Screen =
-      role === "parent" ? "parent" : role === "admin" ? "submissions" : "dashboard";
-    const me = appData.currentUser ? appData.users[appData.currentUser] : null;
-    /* دانش‌آموزی که رشته و سطحش را قبلاً انتخاب کرده، در حال «ویرایش» است؛
-       بازگشتش باید به داشبورد باشد نه به ابتدای سایت */
-    const alreadySet = !!(me && me.field && me.level);
-    if (screen === home) return;
-    if (screen === "auth") return set({ screen: "landing" });
-    if (screen === "level") return set({ screen: alreadySet ? home : "field" });
-    if (screen === "field") return set({ screen: alreadySet ? home : "landing" });
-    set({ screen: home });
+    const stack = [...history];
+    let target: Screen | null = null;
+    while (stack.length) {
+      const t = stack.pop() as Screen;
+      if (t === "landing" || t === "auth") continue;
+      if (role === "superadmin" && STUDENT_SCREENS.has(t)) continue;
+      target = t;
+      break;
+    }
+    set({ screen: target || homeScreenFor(role), history: stack });
+  },
+
+  goBack: () => {
+    if (typeof window !== "undefined" && get().history.length > 0) {
+      window.history.back();
+      return;
+    }
+    get().back();
   },
   setAuthTab: (t) => set({ authTab: t }),
   setDashboardTab: (t) => set({ dashboardTab: t }),
@@ -336,6 +397,7 @@ export const useRoshd = create<RoshdState>((set, get) => ({
       set((st) => ({
         serverUser: null,
         appData: { ...st.appData, currentUser: null },
+        history: [],
       }));
       saveAppData(get().appData);
       return;
@@ -370,7 +432,7 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   logout: () => {
     api("/api/auth/logout", { method: "POST" }).catch(() => {});
     get().bindServerUser(null);
-    set({ screen: "landing" });
+    set({ screen: "landing", history: [] });
   },
 
   curUser: () => {
@@ -575,31 +637,39 @@ export const useRoshd = create<RoshdState>((set, get) => ({
   enterApp: () => {
     // والد به‌جای انتخاب رشته/سطح مستقیم به پنل مشاهده می‌رود
     if (get().serverUser?.role === "parent") {
-      set({ pendingSection: null, screen: "parent" });
+      set({ pendingSection: null, screen: "parent", history: [] });
       return;
     }
-    // مدیر سایت وارد پنل مدیریت می‌شود
+    // مدیر سایت وارد صفحهٔ سه‌کارتی خودش می‌شود (نه آزمون/انتخاب رشته)
     if (get().serverUser?.role === "superadmin") {
       const pendingSuper = get().pendingSection;
-      set({ pendingSection: null, screen: pendingSuper || "admin" });
+      const safe =
+        pendingSuper && !STUDENT_SCREENS.has(pendingSuper)
+          ? pendingSuper
+          : "adminHome";
+      set({ pendingSection: null, screen: safe, history: [] });
       return;
     }
     // معلم وارد صفحهٔ ارسال‌ها می‌شود (به انتخاب رشته/سطح نیازی ندارد)
     if (get().serverUser?.role === "admin") {
       const pendingAdmin = get().pendingSection;
-      set({ pendingSection: null, screen: pendingAdmin || "submissions" });
+      set({
+        pendingSection: null,
+        screen: pendingAdmin || "submissions",
+        history: [],
+      });
       return;
     }
     const u = get().curUser();
     const pending = get().pendingSection;
     set({ pendingSection: null });
     if (pending) {
-      set({ screen: pending });
+      set({ screen: pending, history: [] });
       return;
     }
-    if (u && u.field && u.level) set({ screen: "dashboard" });
-    else if (u) set({ screen: u.field ? "level" : "field" });
-    else set({ screen: "auth" });
+    if (u && u.field && u.level) set({ screen: "dashboard", history: [] });
+    else if (u) set({ screen: u.field ? "level" : "field", history: [] });
+    else set({ screen: "auth", history: [] });
   },
 
   openMenuTarget: (target) => {

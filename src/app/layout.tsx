@@ -3,6 +3,7 @@ import { Vazirmatn, Press_Start_2P, VT323, Roboto } from "next/font/google";
 import "./globals.css";
 import "./calm.css";
 import "./calm-school.css";
+import "./calm-admin.css";
 
 const vazir = Vazirmatn({
   subsets: ["arabic", "latin"],

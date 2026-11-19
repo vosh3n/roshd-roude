@@ -42,7 +42,12 @@ export default function SubmissionsScreen() {
       })
       .catch((e) => {
         setError(e.message);
-        if (e.message.includes("دسترسی")) setScreen("tasks");
+        // فقط معلم را به تکالیفش برگردان؛ مدیر سایت مسیر دانش‌آموز ندارد
+        if (
+          e.message.includes("دسترسی") &&
+          useRoshd.getState().serverUser?.role === "admin"
+        )
+          setScreen("tasks");
       });
   }, [setScreen]);
 

@@ -11,7 +11,8 @@ interface VideoItem {
 export default function VideosScreen() {
   const serverUser = useRoshd((s) => s.serverUser);
   const pushToast = useRoshd((s) => s.pushToast);
-  const isAdmin = serverUser?.role === "admin";
+  const isAdmin =
+    serverUser?.role === "admin" || serverUser?.role === "superadmin";
 
   const [videos, setVideos] = useState<VideoItem[] | null>(null);
   const [error, setError] = useState("");
