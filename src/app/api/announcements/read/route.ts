@@ -10,6 +10,8 @@ import { cleanText } from "@/lib/sanitize";
 export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به اطلاعیه‌ها دسترسی ندارد.", 403);
 
   const body = await req.json().catch(() => ({}));
   let ids: string[] = Array.isArray(body.ids)

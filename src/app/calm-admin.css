@@ -330,3 +330,189 @@ html[data-motion="reduced"] .sa-card:focus-visible {
     align-self: flex-end;
   }
 }
+
+/* =========================================================================
+   پنل نمایندهٔ آموزشی (تکالیف) و مدیریت نماینده‌ها
+   ========================================================================= */
+
+.rep-wrap {
+  max-width: 1020px;
+  margin: 0 auto;
+}
+
+.rep-wrap .page-head {
+  text-align: center;
+}
+
+.rep-assignments,
+.rep-reviews {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 0.9rem;
+}
+
+.rep-assignment {
+  padding: 1rem 1.1rem;
+  border-radius: var(--calm-round-lg, 1.35rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rep-assignment-head,
+.rep-review-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.rep-assignment-head b {
+  font-size: 1.02rem;
+}
+
+.rep-assignment-body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.rep-assignment-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border-top: 1px dashed var(--line);
+  padding-top: 0.6rem;
+}
+
+.rep-assignment-foot .admin-row-actions {
+  margin-inline-start: auto;
+}
+
+.rep-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--calm-round-lg, 1.35rem);
+  margin-top: 0.6rem;
+}
+
+.rep-filters .sa-mini {
+  flex: 1 1 12rem;
+}
+
+.rep-filters select {
+  width: 100%;
+}
+
+.rep-counts {
+  margin: 0.8rem 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.rep-review {
+  padding: 1rem 1.1rem;
+  border-radius: var(--calm-round-lg, 1.35rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rep-review-head small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.rep-review-head .mission-chip {
+  margin-inline-start: auto;
+}
+
+.rep-review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
+.rep-review-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.rep-review-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.rep-review-form .mission-field {
+  flex: 1 1 16rem;
+}
+
+.rep-review-form .rep-grade {
+  flex: 0 1 9rem;
+}
+
+.rep-missing {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* وضعیت‌های بررسی — رنگ‌ها از متغیرهای پوسته */
+.mission-chip.missing {
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  background: transparent;
+}
+
+.mission-chip.revision {
+  color: var(--calm-warn, #e0a13a);
+  border-color: var(--calm-warn, #e0a13a);
+}
+
+.sa-chip.on {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.sa-chip.off {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.reps-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.reps-admin .admin-card {
+  margin-top: 0.4rem;
+}
+
+.reps-count {
+  text-align: center;
+  margin: 0.4rem 0 1.5rem;
+}
+
+@media (max-width: 560px) {
+  .rep-review-form .rep-grade {
+    flex: 1 1 100%;
+  }
+  .rep-assignment-foot .admin-row-actions {
+    margin-inline-start: 0;
+  }
+}

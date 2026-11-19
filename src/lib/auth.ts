@@ -37,7 +37,12 @@ export function checkPass(password: string, salt: string, hash: string) {
   return saved.length === h.length && crypto.timingSafeEqual(saved, h);
 }
 
-export type Role = "student" | "admin" | "parent" | "superadmin";
+export type Role =
+  | "student"
+  | "admin"
+  | "parent"
+  | "superadmin"
+  | "educational_rep";
 
 /** مدیر سایت — بالاترین سطح دسترسی */
 export function isSuperAdmin(role?: string | null) {
@@ -47,6 +52,16 @@ export function isSuperAdmin(role?: string | null) {
 /** معلم یا مدیر سایت — دسترسی به بخش‌های مدیریتی محتوا */
 export function isTeacher(role?: string | null) {
   return role === "admin" || role === "superadmin";
+}
+
+/** نمایندهٔ آموزشی — فقط تکالیف و ارسال‌های آن */
+export function isEducationalRep(role?: string | null) {
+  return role === "educational_rep";
+}
+
+/** هر کسی که اجازهٔ ساخت/ویرایش تکلیف و بررسی ارسال را دارد */
+export function canManageAssignments(role?: string | null) {
+  return isTeacher(role) || isEducationalRep(role);
 }
 
 /** والد، معلم یا مدیر سایت — دیدن دادهٔ دانش‌آموزان */
@@ -60,14 +75,11 @@ export async function roleOf(username: string): Promise<Role> {
       where: { username },
       select: { role: true },
     });
-    // اگر نقش ذخیره‌شده "student" بود، با allowlist ادمین‌های قبلی سازگاری بده
-    if (user?.role && user.role !== "student") return user.role as Role;
+    if (user?.role) return user.role as Role;
   } catch {
-    // fallback: کلاینت پرisma قدیمی‌تر که هنوز فیلد role را نمی‌شناسد
-    // (پنجرهٔ کوتاه قبل از restart سرور) — رفتار قبلی حفظ می‌شود
+    // کلاینت Prisma ممکن است لحظه‌ای قدیمی باشد؛ پیش‌فرض امن دانش‌آموز است
   }
-  const allow = await db.adminAllow.findUnique({ where: { username } });
-  return allow ? "admin" : "student";
+  return "student";
 }
 
 export async function currentUser() {
@@ -79,6 +91,8 @@ export async function currentUser() {
     include: { user: true },
   });
   if (!session) return null;
+  // حساب غیرفعال‌شده (مثلاً نمایندهٔ آموزشی) دیگر نشست معتبر ندارد
+  if (session.user.active === false) return null;
   const role = await roleOf(session.user.username);
   return {
     username: session.user.username,

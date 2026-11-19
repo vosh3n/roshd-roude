@@ -34,18 +34,8 @@ async function main() {
     console.log("user:", username);
   }
 
-  // ۲) ادمین‌ها
-  const admins = readJson(path.join(SRC, "authorized-admins.json"), []);
-  for (const username of admins) {
-    await db.adminAllow.upsert({
-      where: { username },
-      update: {},
-      create: { username: String(username).trim() },
-    });
-    console.log("admin:", username);
-  }
-
-  // ۳) ویدیوها + کپی فایل‌ها
+  // ۲) ویدیوها + کپی فایل‌ها
+  // (بخش «دادن دسترسی مدیر» حذف شده است؛ نقش‌ها فقط از seed/پنل مدیر سایت می‌آیند)
   const content = readJson(path.join(SRC, "content.json"), {
     videos: [],
     assignments: [],

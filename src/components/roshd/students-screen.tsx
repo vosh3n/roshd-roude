@@ -12,8 +12,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, useRoshd } from "@/store/roshd";
 import { LEVELS } from "@/lib/missions-data";
 import { fmtDeadline, toFa } from "@/lib/jalali";
-import { Loader2, Save, Search, Trash2, UserRound } from "lucide-react";
+import { GraduationCap, Loader2, Save, Search, Trash2, UserRound } from "lucide-react";
 import EmptyState from "./empty-state";
+import RepsAdmin from "./reps-admin";
 
 interface StudentRow {
   username: string;
@@ -45,7 +46,10 @@ export default function StudentsScreen() {
   const pushToast = useRoshd((s) => s.pushToast);
   const [rows, setRows] = useState<StudentRow[] | null>(null);
   const [parents, setParents] = useState<ParentRow[]>([]);
-  const [q, setQ] = useState("");
+    const [q, setQ] = useState("");
+
+  const [tab, setTab] = useState<"students" | "reps">("students");
+
   const [busy, setBusy] = useState<string | null>(null);
   const [passwords, setPasswords] = useState<Record<string, string>>({});
   const [names, setNames] = useState<Record<string, string>>({});
@@ -153,6 +157,32 @@ export default function StudentsScreen() {
         </p>
       </div>
 
+      <div
+        className="parent-tabs admin-tabs"
+        role="tablist"
+        aria-label="بخش‌های حساب‌ها"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "students"}
+          className={"parent-tab" + (tab === "students" ? " active" : "")}
+          onClick={() => setTab("students")}
+        >
+          <UserRound size={16} /> دانش‌آموزان
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "reps"}
+          className={"parent-tab" + (tab === "reps" ? " active" : "")}
+          onClick={() => setTab("reps")}
+        >
+          <GraduationCap size={16} /> نماینده‌های آموزشی
+        </button>
+      </div>
+
+      {tab === "reps" ? <RepsAdmin /> : <>
       <label className="sa-search">
         <Search size={16} />
         <input
@@ -299,6 +329,8 @@ export default function StudentsScreen() {
           ))}
         </div>
       )}
+      </>
+      }
     </div>
   );
 }

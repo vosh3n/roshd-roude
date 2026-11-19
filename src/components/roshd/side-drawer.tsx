@@ -83,6 +83,13 @@ const NAV: {
     Icon: GraduationCap,
     roles: ["superadmin"],
   },
+  /* نمایندهٔ آموزشی فقط یک بخش دارد: تکالیف */
+  {
+    target: "repTasks",
+    label: "تکالیف",
+    Icon: ClipboardList,
+    roles: ["educational_rep"],
+  },
   {
     target: "submissions",
     label: "ارسال‌های ماموریت",

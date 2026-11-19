@@ -8,6 +8,8 @@ import fs from "fs";
 export async function GET() {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به ویدیوها دسترسی ندارد.", 403);
   const videos = await db.video.findMany({ orderBy: { createdAt: "asc" } });
   return Response.json({
     videos: videos.map((v) => ({ id: v.id, title: v.title })),

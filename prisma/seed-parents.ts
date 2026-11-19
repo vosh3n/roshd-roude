@@ -38,26 +38,9 @@ async function main() {
     console.log("parent seeded:", p.username);
   }
 
-  // ۲) backfill نقش ادمین — هر کاربر allowlist شده ادمین است
-  const allows = await db.adminAllow.findMany();
-  for (const a of allows) {
-    const u = await db.user.findUnique({ where: { username: a.username } });
-    if (!u) {
-      console.log("admin backfill skipped (no user):", a.username);
-      continue;
-    }
-    if (u.role !== "admin") {
-      await db.user.update({
-        where: { username: a.username },
-        data: { role: "admin" },
-      });
-      console.log("admin backfilled:", a.username);
-    } else {
-      console.log("admin already ok:", a.username);
-    }
-  }
+  // (بخش «دادن دسترسی مدیر» و allowlist حذف شده است)
 
-  // ۳) اطمینان: هیچ دانش‌آموزی به‌اشتباه والد/ادمین نشده باشد — فقط گزارش
+  // ۲) اطمینان: هیچ دانش‌آموزی به‌اشتباه والد/ادمین نشده باشد — فقط گزارش
   const summary = await db.user.groupBy({
     by: ["role"],
     _count: { role: true },

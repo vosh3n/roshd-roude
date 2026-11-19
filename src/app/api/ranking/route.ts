@@ -27,6 +27,8 @@ export async function GET() {
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
   if (user.role === "parent")
     return jsonError("این بخش برای دانش‌آموزها و مدیر است.", 403);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به رتبه‌بندی دسترسی ندارد.", 403);
 
   const students = await db.user.findMany({
     where: { role: "student" },

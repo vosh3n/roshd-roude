@@ -1,6 +1,12 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { currentUser, roleOf, jsonError, isTeacher } from "@/lib/auth";
+import {
+  currentUser,
+  roleOf,
+  jsonError,
+  canManageAssignments,
+} from "@/lib/auth";
+import { cleanText, cleanMultiline } from "@/lib/sanitize";
 
 export async function GET() {
   const user = await currentUser();
@@ -22,6 +28,7 @@ export async function GET() {
       id: a.id,
       title: a.title,
       body: a.body,
+      audience: a.audience || "",
       deadline: a.deadline.toISOString(),
       expired: Date.now() > a.deadline.getTime(),
       mine: a.submissions[0]
@@ -39,14 +46,16 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
-  if (!isTeacher(await roleOf(user.username)))
-    return jsonError("دسترسی مدیر نداری.", 403);
+  /* فقط معلم، مدیر سایت و نمایندهٔ آموزشی می‌توانند تکلیف بسازند */
+  if (!canManageAssignments(await roleOf(user.username)))
+    return jsonError("دسترسی ساخت تکلیف نداری.", 403);
 
   try {
     const body = await req.json();
     const title = String(body.title || "").trim();
     const text = String(body.body || "").trim();
     const deadline = String(body.deadline || "");
+    const audience = cleanText(body.audience, 80);
     if (!title || !text || !deadline || Number.isNaN(new Date(deadline).getTime()))
       return jsonError("عنوان، توضیحات و مهلت معتبر لازم است.");
 
@@ -54,8 +63,9 @@ export async function POST(req: NextRequest) {
     await db.assignment.create({
       data: {
         id,
-        title: title.slice(0, 160),
-        body: text.slice(0, 4000),
+        title: cleanMultiline(title, 160),
+        body: cleanMultiline(text, 4000),
+        audience,
         deadline: new Date(deadline),
       },
     });

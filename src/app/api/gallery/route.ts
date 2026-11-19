@@ -9,6 +9,8 @@ import { galleryUrl } from "@/lib/gallery";
 export async function GET() {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به گالری دسترسی ندارد.", 403);
 
   const albums = await db.galleryAlbum.findMany({
     orderBy: [{ sort: "asc" }, { createdAt: "asc" }],

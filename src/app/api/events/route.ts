@@ -8,6 +8,8 @@ import { currentUser, jsonError } from "@/lib/auth";
 export async function GET() {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به تقویم دسترسی ندارد.", 403);
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);

@@ -17,6 +17,8 @@ export async function GET(
 ) {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به گالری دسترسی ندارد.", 403);
 
   const { file } = await params;
   if (!isSafeGalleryName(file)) return jsonError("عکس پیدا نشد.", 404);

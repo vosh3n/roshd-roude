@@ -227,6 +227,11 @@ export async function POST(req: NextRequest) {
         403
       );
     // مسیر آزمون تعیین سطح فقط برای دانش‌آموز است
+    if (String(user.role) === "educational_rep")
+      return jsonError(
+        "نمایندهٔ آموزشی به آزمون تعیین سطح دسترسی ندارد.",
+        403
+      );
     if (String(user.role) === "superadmin")
       return jsonError(
         "آزمون تعیین سطح برای مدیر سایت فعال نیست؛ این مسیر مخصوص دانش‌آموزان است.",

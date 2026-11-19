@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
 
     if (!u || !checkPass(password, u.salt, u.hash))
       return jsonError("نام کاربری/ایمیل یا رمز عبور اشتباه است.", 401);
+    if (u.active === false)
+      return jsonError(
+        "این حساب غیرفعال شده است؛ با مدیر سایت تماس بگیر.",
+        403
+      );
 
     const sid = await createSession(u.username);
     if (!sid) return jsonError("خطای ساخت نشست.", 500);

@@ -15,6 +15,7 @@
     "user": "node scripts/manage-user.mjs",
     "seed:superadmin": "node scripts/seed-superadmin.mjs",
     "seed:teacher": "node scripts/seed-teacher.mjs",
+    "seed:rep": "node scripts/seed-rep.mjs",
     "emoji:sync": "node scripts/emoji-sync.mjs"
   },
   "dependencies": {

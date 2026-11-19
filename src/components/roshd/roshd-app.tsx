@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRoshd, api, fireConfetti, STUDENT_SCREENS } from "@/store/roshd";
+import {
+  useRoshd,
+  api,
+  fireConfetti,
+  STUDENT_SCREENS,
+  REP_SCREENS,
+} from "@/store/roshd";
 import { getTheme } from "@/lib/themes";
 import LandingScreen from "./landing-screen";
 import AuthScreen from "./auth-screen";
@@ -21,6 +27,7 @@ import AdminPanelScreen from "./admin-panel-screen";
 import SuperAdminHome from "./superadmin-home";
 import TeacherPanelScreen from "./teacher-panel-screen";
 import StudentsScreen from "./students-screen";
+import RepTasksScreen from "./rep-tasks-screen";
 import SideDrawer, { DrawerToggle } from "./side-drawer";
 import { ROLE_LABEL } from "@/lib/role-labels";
 import AvatarModal from "./avatar-modal";
@@ -135,6 +142,7 @@ const SCREENS: Record<
   adminHome: { id: "adminHomeScreen", Comp: SuperAdminHome },
   teacher: { id: "teacherPanelScreen", Comp: TeacherPanelScreen },
   students: { id: "studentsScreen", Comp: StudentsScreen },
+  repTasks: { id: "repTasksScreen", Comp: RepTasksScreen },
 };
 
 /** اعلان تکی: ورود فنری + خروج نرم — چرخهٔ عمر خودش را مدیریت می‌کند
@@ -187,9 +195,16 @@ export default function RoshdApp() {
      (مثلاً بعد از رفرش یا تغییر نقش) */
   const roles = serverUser?.role;
   useEffect(() => {
-    if (roles !== "superadmin") return;
-    if (screen === "landing" || screen === "auth") return;
-    if (STUDENT_SCREENS.has(screen)) setScreen("adminHome");
+    if (roles === "superadmin") {
+      if (screen === "landing" || screen === "auth") return;
+      if (STUDENT_SCREENS.has(screen)) setScreen("adminHome");
+      return;
+    }
+    // نمایندهٔ آموزشی فقط پنل تکالیف و تنظیمات را می‌بیند
+    if (roles === "educational_rep") {
+      if (screen === "landing" || screen === "auth") return;
+      if (!REP_SCREENS.has(screen)) setScreen("repTasks");
+    }
   }, [roles, screen, setScreen]);
 
   /* دکمهٔ بازگشت مرورگر/گوشی هم همان تاریخچهٔ صفحه‌ها را یک پله عقب می‌برد؛
@@ -255,6 +270,8 @@ export default function RoshdApp() {
                 ? "پنل معلم — مدیریت تکالیف، ویدیوها و ارسال‌ها"
                 : serverUser?.role === "superadmin"
                   ? "پنل مدیر سایت — پنل اولیا، پنل معلم و دانش‌آموزان"
+                  : serverUser?.role === "educational_rep"
+                    ? "پنل نمایندهٔ آموزشی — تکالیف کلاس"
                   : "هر روز ۴ ماموریت، متناسب با رشته و سطح تو"}
             </div>
           </div>

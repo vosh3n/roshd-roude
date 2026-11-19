@@ -9,6 +9,8 @@ import { currentUser, jsonError } from "@/lib/auth";
 export async function GET() {
   const user = await currentUser();
   if (!user) return jsonError("وارد حساب نشده‌ای.", 401);
+  if (user.role === "educational_rep")
+    return jsonError("نمایندهٔ آموزشی به اطلاعیه‌ها دسترسی ندارد.", 403);
 
   const items = await db.announcement.findMany({
     orderBy: [{ createdAt: "desc" }],

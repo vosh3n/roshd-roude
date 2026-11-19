@@ -41,12 +41,6 @@ export async function ensureAdmin() {
       });
     }
 
-    // allowlist قدیمی هم پر شود تا نقش مدیر در هر مسیری برگردد
-    await db.adminAllow.upsert({
-      where: { username: MAIN_ADMIN.username },
-      create: { username: MAIN_ADMIN.username },
-      update: {},
-    });
   } catch (e) {
     // دیتابیس ممکن است هنوز آماده نباشد؛ بار بعد دوباره تلاش می‌شود
     console.error("[bootstrap] ensureAdmin failed:", e);

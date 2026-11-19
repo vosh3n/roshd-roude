@@ -12,7 +12,8 @@
  * نقش‌ها (دسترسی‌ها):
  *   student → دانش‌آموز عادی (مأموریت‌ها، آزمون، تکالیف)
  *   parent  → فقط مشاهدهٔ پیشرفت همهٔ دانش‌آموزها و فایل تکالیف (بدون هیچ تغییر)
- *   admin   → مدیر (همه‌چیز + بخش مدیریت ویدیوها/تکالیف در منو)
+ *   admin   → معلم (همه‌چیز + بخش مدیریت ویدیوها/تکالیف در منو)
+ *   educational_rep → نمایندهٔ آموزشی (فقط تکالیف کلاس)
  *
  * نکته: رمزها با scrypt هش می‌شوند (دقیقاً مثل خود سایت) و در دیتابیس
  * db/custom.db ذخیره می‌شوند. اگر سرور روشن است، بعد از تغییرات نیازی به
@@ -37,7 +38,7 @@ if (!process.env.DATABASE_URL) {
 const { PrismaClient } = await import("@prisma/client");
 const db = new PrismaClient();
 
-const ROLES = ["student", "parent", "admin"];
+const ROLES = ["student", "parent", "admin", "educational_rep"];
 const USERNAME_RE = /^[\w.\-]{3,32}$/;
 
 function fail(msg) {
@@ -55,8 +56,8 @@ function printUsage() {
   console.log(`
 👥 مدیریت کاربران «مسیر رشد»
 
-  npm run user -- add    <username> <password> "<نام>" [student|parent|admin]
-  npm run user -- role   <username> <student|parent|admin>
+  npm run user -- add    <username> <password> "<نام>" [student|parent|admin|educational_rep]
+  npm run user -- role   <username> <student|parent|admin|educational_rep>
   npm run user -- passwd <username> <رمز-جدید>
   npm run user -- delete <username>
   npm run user -- list
@@ -89,14 +90,6 @@ async function cmdAdd(args) {
   const user = await db.user.create({
     data: { username, name: name.trim(), salt, hash, role },
   });
-  // سازگاری با allowlist ادمین‌های قدیمی
-  if (role === "admin") {
-    await db.adminAllow.upsert({
-      where: { username },
-      update: {},
-      create: { username },
-    });
-  }
   console.log(`✓ کاربر ساخته شد: ${user.username} (${user.name}) — نقش: ${role}`);
   if (role === "parent")
     console.log("  این حساب فقط می‌تواند پیشرفت دانش‌آموزها را ببیند (بدون ویرایش).");
@@ -111,16 +104,6 @@ async function cmdRole(args) {
   const user = await db.user.findUnique({ where: { username } });
   if (!user) fail(`کاربر «${username}» پیدا نشد.`);
   await db.user.update({ where: { username }, data: { role } });
-  // اگر از ادمین به بقیه تنزل گرفت، از allowlist هم بردار تا واقعاً ادمین نماند
-  if (role !== "admin") {
-    await db.adminAllow.deleteMany({ where: { username } });
-  } else {
-    await db.adminAllow.upsert({
-      where: { username },
-      update: {},
-      create: { username },
-    });
-  }
   console.log(`✓ نقش «${username}» به ${role} تغییر کرد. (دسترسی بعد از ورود بعدی اعمال می‌شود)`);
 }
 
@@ -142,7 +125,6 @@ async function cmdDelete(args) {
   const user = await db.user.findUnique({ where: { username } });
   if (!user) fail(`کاربر «${username}» پیدا نشد.`);
   await db.user.delete({ where: { username } }); // پیشرفت و نشست‌ها هم حذف می‌شوند
-  await db.adminAllow.deleteMany({ where: { username } });
   console.log(`✓ کاربر «${username}» (نقش: ${user.role}) به‌همراه پیشرفتش حذف شد.`);
 }
 
@@ -151,7 +133,13 @@ async function cmdList() {
     orderBy: [{ role: "asc" }, { username: "asc" }],
     select: { username: true, name: true, role: true, createdAt: true },
   });
-  const roleFa = { student: "دانش‌آموز", parent: "والد", admin: "مدیر" };
+  const roleFa = {
+    student: "دانش‌آموز",
+    parent: "والد",
+    admin: "معلم",
+    superadmin: "مدیر سایت",
+    educational_rep: "نمایندهٔ آموزشی",
+  };
   console.log(`\n👥 ${users.length} کاربر:\n`);
   console.log("  نام کاربری          نام                    نقش         ساخته‌شده");
   console.log("  " + "-".repeat(72));

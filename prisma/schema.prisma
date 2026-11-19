@@ -14,7 +14,11 @@ model User {
   email      String? // برای بازیابی رمز عبور
   salt       String
   hash       String
-  role       String    @default("student") // "student" | "admin" | "parent" | "superadmin"
+  role       String    @default("student") // "student" | "admin" | "parent" | "superadmin" | "educational_rep"
+  /** کلاس نمایندهٔ آموزشی — فقط برای نقش educational_rep استفاده می‌شود */
+  classRoom  String    @default("")
+  /** حساب غیرفعال نمی‌تواند وارد شود (برای نماینده‌ها از پنل مدیر سایت) */
+  active     Boolean   @default(true)
   /** نام کاربری والد این دانش‌آموز — اتصال والد به فرزند (خالی = بدون والد) */
   parentUsername String @default("")
   avatar     String    @default("") // نام فایل عکس پروفایل در db/uploads/avatars
@@ -147,12 +151,6 @@ model ParentMessage {
   @@index([parentUsername, createdAt])
 }
 
-model AdminAllow {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  createdAt DateTime @default(now())
-}
-
 model Video {
   id        String   @id
   title     String
@@ -167,6 +165,8 @@ model Assignment {
   title       String
   body        String
   deadline    DateTime
+  /** کلاس یا رشته/سطح مربوط — متن آزاد، خالی یعنی برای همه */
+  audience    String       @default("")
   createdAt   DateTime     @default(now())
   submissions Submission[]
 }
@@ -181,5 +181,12 @@ model Submission {
   extraId      String     @default("")
   extraName    String     @default("")
   note         String     @default("")
+  /** pending | approved | revision */
+  status       String     @default("pending")
+  /** بازخورد یا دلیل برگشت برای اصلاح */
+  feedback     String     @default("")
+  /** نمرهٔ اختیاری (متن آزاد مثل «۱۸» یا «۱۸ از ۲۰») */
+  grade        String     @default("")
+  reviewedAt   DateTime?
   at           DateTime   @default(now())
 }

@@ -86,7 +86,9 @@ export type Screen =
   /* پنل معلم، از نگاه مدیر سایت (دسترسی کامل) */
   | "teacher"
   /* مدیریت حساب و وضعیت دانش‌آموزان */
-  | "students";
+  | "students"
+  /* پنل نمایندهٔ آموزشی — فقط تکالیف */
+  | "repTasks";
 
 /**
  * صفحه‌های مخصوص مسیر دانش‌آموز (انتخاب رشته/سطح، آزمون، داشبورد، تکالیف،
@@ -102,6 +104,15 @@ export const STUDENT_SCREENS: ReadonlySet<Screen> = new Set<Screen>([
   "ranking",
 ]);
 
+/**
+ * صفحه‌های مجاز نمایندهٔ آموزشی — فقط پنل تکالیف و تنظیمات (پوسته/رمز).
+ * هر مسیر دیگری در سمت کلاینت به پنل تکالیف برگردانده می‌شود و در سرور ۴۰۳ می‌گیرد.
+ */
+export const REP_SCREENS: ReadonlySet<Screen> = new Set<Screen>([
+  "repTasks",
+  "settings",
+]);
+
 /** صفحهٔ اصلی هر نقش — مقصد دکمهٔ بازگشت وقتی تاریخچه خالی است */
 export function homeScreenFor(
   role?: ServerUser["role"] | null
@@ -109,6 +120,7 @@ export function homeScreenFor(
   if (role === "parent") return "parent";
   if (role === "superadmin") return "adminHome";
   if (role === "admin") return "submissions";
+  if (role === "educational_rep") return "repTasks";
   return "dashboard";
 }
 
@@ -116,7 +128,7 @@ export interface ServerUser {
   username: string;
   name: string;
   email?: string;
-  role: "admin" | "student" | "parent" | "superadmin";
+  role: "admin" | "student" | "parent" | "superadmin" | "educational_rep";
   /** آدرس عکس پروفایل (خالی = بدون عکس) */
   avatar?: string;
 }
@@ -316,6 +328,9 @@ export const useRoshd = create<RoshdState>((set, get) => ({
     let next = s;
     if (serverUser?.role === "superadmin" && STUDENT_SCREENS.has(next))
       next = "adminHome";
+    // نمایندهٔ آموزشی فقط پنل تکالیف و تنظیمات را می‌بیند
+    if (serverUser?.role === "educational_rep" && !REP_SCREENS.has(next))
+      next = "repTasks";
     if (next === screen) return;
     const fromEntry = screen === "landing" || screen === "auth";
     const nextHistory = fromEntry ? [] : [...history, screen].slice(-40);
@@ -340,6 +355,7 @@ export const useRoshd = create<RoshdState>((set, get) => ({
       const t = stack.pop() as Screen;
       if (t === "landing" || t === "auth") continue;
       if (role === "superadmin" && STUDENT_SCREENS.has(t)) continue;
+      if (role === "educational_rep" && !REP_SCREENS.has(t)) continue;
       target = t;
       break;
     }
@@ -638,6 +654,14 @@ export const useRoshd = create<RoshdState>((set, get) => ({
     // والد به‌جای انتخاب رشته/سطح مستقیم به پنل مشاهده می‌رود
     if (get().serverUser?.role === "parent") {
       set({ pendingSection: null, screen: "parent", history: [] });
+      return;
+    }
+    // نمایندهٔ آموزشی همیشه وارد پنل تکالیف می‌شود
+    if (get().serverUser?.role === "educational_rep") {
+      const pendingRep = get().pendingSection;
+      const safeRep =
+        pendingRep && REP_SCREENS.has(pendingRep) ? pendingRep : "repTasks";
+      set({ pendingSection: null, screen: safeRep, history: [] });
       return;
     }
     // مدیر سایت وارد صفحهٔ سه‌کارتی خودش می‌شود (نه آزمون/انتخاب رشته)

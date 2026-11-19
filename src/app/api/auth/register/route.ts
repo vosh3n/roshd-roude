@@ -39,13 +39,13 @@ export async function POST(req: NextRequest) {
     const sid = await createSession(username);
     if (!sid) return jsonError("خطای ساخت نشست.", 500);
 
-    const allow = await db.adminAllow.findUnique({ where: { username } });
+    // ثبت‌نام عمومی همیشه فقط «دانش‌آموز» می‌سازد؛ هیچ نقش دیگری از این راه ساخته نمی‌شود
     const res = Response.json({
       user: {
         username,
         name,
         email: email || "",
-        role: allow ? "admin" : "student",
+        role: "student",
         avatar: "",
       },
     });

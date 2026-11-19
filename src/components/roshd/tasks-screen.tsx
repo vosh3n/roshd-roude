@@ -18,12 +18,6 @@ interface Assignment {
   } | null;
 }
 
-interface AllowItem {
-  username: string;
-  name: string;
-  joined: boolean;
-}
-
 function past(iso: string) {
   return Date.now() > new Date(iso).getTime();
 }
@@ -37,7 +31,6 @@ export default function TasksScreen() {
 
   const [assignments, setAssignments] = useState<Assignment[] | null>(null);
   const [role, setRole] = useState<string>(serverUser?.role || "student");
-  const [allowList, setAllowList] = useState<AllowItem[] | null>(null);
   const [error, setError] = useState("");
 
   // فرم ساخت تکلیف
@@ -46,9 +39,6 @@ export default function TasksScreen() {
   const [deadline, setDeadline] = useState("");
   const [taskError, setTaskError] = useState("");
   const [creating, setCreating] = useState(false);
-
-  // فرم دسترسی معلم
-  const [allowUser, setAllowUser] = useState("");
 
   // ارسال پاسخ
   const [submitting, setSubmitting] = useState<string | null>(null);
@@ -61,10 +51,8 @@ export default function TasksScreen() {
   const [deadlineEdits, setDeadlineEdits] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
-    const jobs: Promise<any>[] = [api("/api/assignments")];
-    if (isAdmin) jobs.push(api("/api/admin/allowlist"));
-    Promise.all(jobs)
-      .then(([d, allow]) => {
+    api("/api/assignments")
+      .then((d) => {
         if (serverUser) {
           // نقش ممکن است تغییر کرده باشد
           setRole(d.role);
@@ -73,11 +61,10 @@ export default function TasksScreen() {
           }
         }
         setAssignments(d.assignments);
-        if (allow) setAllowList(allow.usernames);
         setError("");
       })
       .catch((e) => setError(e.message));
-  }, [isAdmin, serverUser, bindServerUser]);
+  }, [serverUser, bindServerUser]);
 
   useEffect(() => {
     load();
@@ -105,26 +92,6 @@ export default function TasksScreen() {
       setTaskError(e.message);
     } finally {
       setCreating(false);
-    }
-  };
-
-  const setAdminAccess = async (grant: boolean) => {
-    const username = allowUser.trim();
-    try {
-      await api("/api/admin/allow", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, grant }),
-      });
-      setAllowUser("");
-      pushToast(grant ? "دسترسی معلم ثبت شد" : "دسترسی معلم برداشته شد");
-      load();
-      if (serverUser && serverUser.username === username) {
-        const d = await api("/api/auth/me");
-        bindServerUser(d.user);
-      }
-    } catch (e: any) {
-      pushToast(e.message);
     }
   };
 
@@ -222,35 +189,6 @@ export default function TasksScreen() {
           </button>
           <div className="error-msg" id="taskError" role="alert">
             {taskError}
-          </div>
-        </div>
-      ) : null}
-
-      {adminMode ? (
-        <div className="card" style={{ padding: "1.125rem", marginBottom: "1rem" }} id="adminPeople">
-          <div className="field-group">
-            <label htmlFor="allowUser">نام کاربری حساب معلم</label>
-            <input
-              id="allowUser"
-              type="text"
-              placeholder="username"
-              value={allowUser}
-              onChange={(e) => setAllowUser(e.target.value)}
-              dir="ltr"
-            />
-          </div>
-          <button className="btn" type="button" onClick={() => setAdminAccess(true)}>
-            دادن دسترسی معلم
-          </button>{" "}
-          <button className="btn secondary" type="button" onClick={() => setAdminAccess(false)}>
-            گرفتن دسترسی
-          </button>
-          <div className="note" id="allowList">
-            {allowList
-              ? allowList.length
-                ? "مجازها: " + allowList.map((u) => u.username).join("، ")
-                : "هنوز نام کاربری مجازی ثبت نشده."
-              : ""}
           </div>
         </div>
       ) : null}
