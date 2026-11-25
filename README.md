@@ -149,6 +149,24 @@ bun run start      # اجرای نسخهٔ production
 ### 📱 بهینه‌سازی موبایل
 هدر موبایل جمع‌وجور شد (~۵۷px)، تب‌ها اسکرولی، اهداف لمسی ≥۴۴px، جلوگیری از زوم iOS روی ورودی‌ها، پشتیبانی safe-area و حذف کامل اسکرول افقی در عرض ۳۲۰–۴۳۰px — بدون تغییر دسکتاپ و با حفظ هر ۱۷ پوسته.
 
+## ☁️ مرورگر ابری Browserless (اختیاری)
+
+برای اجرای خودکار مرورگر بدون نصب مرورگر روی سیستم، یک نمونهٔ حداقلی و قابل‌اجرا با **Playwright (`playwright-core`)** به مرورگر مدیریت‌شدهٔ [Browserless](https://browserless.io) وصل می‌شود.
+
+1. توکن را از [داشبورد Browserless](https://browserless.io/account/) بگیر.
+2. یک‌بار بسته را نصب کن: `npm install -D playwright-core` (یا `bun add -d playwright-core`).
+3. در `.env` (که کامیت نمی‌شود) این خط را بگذار: `BROWSERLESS_TOKEN=توکن-خودت`
+4. اجرا:
+
+```bash
+npm run browserless:check                                # صفحهٔ عمومی example.com
+node scripts/browserless-smoke.mjs https://example.com/  # آدرس دلخواه
+```
+
+- اسکریپت `scripts/browserless-smoke.mjs` توکن را فقط از `BROWSERLESS_TOKEN` (یا `.env`) می‌خواند و هرگز چاپش نمی‌کند؛ `.env` در `.gitignore` است، پس هیچ توکنی داخل مخزن نیست.
+- منطقهٔ اتصال پیش‌فرض `wss://production-sfo.browserless.io` است؛ برای منطقهٔ دیگر `BROWSERLESS_ENDPOINT` را در `.env` بگذار (مثلاً `wss://production-lon.browserless.io`).
+- بدون توکن، اسکریپت با پیام روشن و کد خروج ۱ تمام می‌شود و بقیهٔ بخش‌های پروژه دست‌نخورده می‌مانند.
+
 ## 🎨 پوسته‌ها
 
 ۱۷ پوستهٔ مختلف: رشد (روشن/تیره)، Material You، iOS روشن/تیره، Win98، Pixel، Terminal، Dracula، Nord، Solarized و… — از بخش «تنظیمات» داخل سایت عوض می‌شوند و برای کاربران جدید، کوییز اولین ورود سؤال می‌پرسد.

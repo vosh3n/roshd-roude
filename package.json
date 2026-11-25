@@ -18,7 +18,8 @@
     "seed:rep": "node scripts/seed-rep.mjs",
     "seed:test": "node scripts/seed-test.mjs",
     "seed:test:remove": "node scripts/seed-test-remove.mjs",
-    "emoji:sync": "node scripts/emoji-sync.mjs"
+    "emoji:sync": "node scripts/emoji-sync.mjs",
+    "browserless:check": "node scripts/browserless-smoke.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -97,6 +98,7 @@
     "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
+    "playwright-core": "^1.65.1",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
     "typescript": "^5"
